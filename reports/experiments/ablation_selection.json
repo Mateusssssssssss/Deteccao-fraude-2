@@ -1,0 +1,154 @@
+{
+  "model": "random_forest__scaled_smote_selected",
+  "best_overall_cv": "random_forest__scaled_smote_all",
+  "selection": "Maior F2 CV entre receitas com regra de retirada solicitada",
+  "threshold": 0.7,
+  "selected_features": [
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "V7",
+    "V9",
+    "V10",
+    "V11",
+    "V12",
+    "V14",
+    "V16",
+    "V17",
+    "V18"
+  ],
+  "removed_features": [
+    "Time",
+    "V6",
+    "V8",
+    "V13",
+    "V15",
+    "V19",
+    "V20",
+    "V21",
+    "V22",
+    "V23",
+    "V24",
+    "V25",
+    "V26",
+    "V27",
+    "V28",
+    "Amount"
+  ],
+  "rule": "remove = abs(Pearson) < 0.090 AND permutation_AP < 0.100",
+  "config": {
+    "data_path": "data/raw/creditcard.csv",
+    "seed": 42,
+    "test_time_fraction": 0.2,
+    "cv_splits": 3,
+    "threshold": 0.5,
+    "primary_metric": "average_precision",
+    "n_jobs": 2,
+    "sampling_strategies": [
+      "none",
+      "under_smote"
+    ],
+    "under_ratio": 0.1,
+    "smote_ratio": 0.6,
+    "smote_neighbors": 3,
+    "models": {
+      "random_forest": {
+        "n_estimators": 160,
+        "max_depth": 14,
+        "min_samples_leaf": 2,
+        "max_features": "sqrt",
+        "criterion": "gini",
+        "class_weight": "balanced_subsample"
+      },
+      "xgboost": {
+        "n_estimators": 200,
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.0,
+        "reg_lambda": 1.0,
+        "min_child_weight": 3
+      }
+    }
+  },
+  "settings": {
+    "correlation_cutoff": 0.09,
+    "importance_cutoff": 0.1,
+    "importance": "permutation_average_precision",
+    "importance_repeats": 3,
+    "selection_validation_time_fraction": 0.2,
+    "smote_ratio": 0.1,
+    "recipes": [
+      "raw_all",
+      "scaled_all",
+      "scaled_smote_all",
+      "scaled_selected",
+      "scaled_smote_selected"
+    ],
+    "primary_metric": "f2"
+  },
+  "threshold_settings": {
+    "model": "xgboost__none",
+    "objective": "f2",
+    "beta": 2.0,
+    "inner_validation_time_fraction": 0.2,
+    "thresholds": [
+      0.0,
+      0.0001,
+      0.0003,
+      0.001,
+      0.003,
+      0.005,
+      0.01,
+      0.02,
+      0.03,
+      0.05,
+      0.075,
+      0.1,
+      0.125,
+      0.15,
+      0.175,
+      0.2,
+      0.225,
+      0.25,
+      0.275,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ]
+  },
+  "final_threshold_inner_split": {
+    "cutoff_time": 110584.0,
+    "duplicates_removed": 0,
+    "inner_fit_rows": 157284,
+    "inner_tune_rows": 53008,
+    "inner_fit_time_max": 110583.0,
+    "inner_tune_time_min": 110584.0,
+    "inner_tune_time_max": 138230.0,
+    "inner_tune_positives": 39
+  },
+  "split": {
+    "cutoff_time": 138233.6,
+    "duplicates_removed": 1081
+  },
+  "dataset_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+  "test_evaluated": false,
+  "limitations": [
+    "Ablações reutilizam TRAIN de rodadas anteriores; novo TEST externo necessário.",
+    "Threshold avaliado em janela externa ao ajuste, condicionado à receita selecionada.",
+    "Importância de referência XGBoost em validação interna; não é porcentagem.",
+    "Features podem variar entre folds; regra final reaprendida no TRAIN completo.",
+    "CV externa da receita vencedora também participou da seleção; pode ser otimista.",
+    "Refit e seleção de features podem alterar distribuição dos scores; sem calibração."
+  ]
+}

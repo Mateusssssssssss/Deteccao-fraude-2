@@ -1,0 +1,20 @@
+Conteúdo
+O conjunto de dados contém transações feitas por cartões de crédito em setembro de 2013 
+por titulares de cartão europeus.
+Este conjunto de dados apresenta transações que ocorreram em dois dias,
+onde temos 492 fraudes de 284.807 transações. O conjunto de dados é altamente desbalanceado,
+a classe positiva (fraudes) é responsável por 0,172% de todas as transações.
+
+Ele contém apenas variáveis ​​de entrada numéricas que são o resultado de uma transformação PCA. 
+Infelizmente, devido a problemas de confidencialidade, não podemos fornecer os recursos originais 
+e mais informações básicas sobre os dados. Os recursos V1, V2, … V28
+ são os principais componentes obtidos com PCA, 
+ os únicos recursos que não foram transformados com PCA são 'Tempo' e 'Valor'. 
+ O recurso 'Tempo' contém os segundos decorridos entre cada transação e a primeira 
+ transação no conjunto de dados. O recurso 'Amount' é o Amount da transação, 
+ esse recurso pode ser usado para aprendizado sensível a custos dependente de exemplo.
+O recurso 'Class' é a variável de resposta e assume o valor 1 em caso de fraude e 0 em caso contrário.
+
+Dada a taxa de desequilíbrio de classe, 
+recomendamos medir a precisão usando a Area Under the Precision-Recall Curve (AUPRC). 
+A precisão da matriz de confusão não é significativa para classificação desbalanceada.

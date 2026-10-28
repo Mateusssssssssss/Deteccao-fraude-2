@@ -1,0 +1,4 @@
+fold,threshold_f2,threshold_f3,fit_time_max,validation_time_min,validation_time_max,method
+1,0.3,0.125,42612.0,42613.0,69254.0,Refit no treino externo; contagens F2 reproduzidas antes de avaliar F3
+2,0.3,0.3,69254.0,69255.0,108793.0,Reuso de métricas externas: mesmo modelo e mesmo threshold
+3,0.45,0.225,108793.0,108799.0,138230.0,Refit no treino externo; contagens F2 reproduzidas antes de avaliar F3

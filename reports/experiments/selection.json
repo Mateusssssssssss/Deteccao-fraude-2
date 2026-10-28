@@ -1,0 +1,73 @@
+{
+  "model": "xgboost__none",
+  "selection": "maior AP média em CV temporal TRAIN",
+  "threshold": 0.5,
+  "config": {
+    "data_path": "data/raw/creditcard.csv",
+    "seed": 42,
+    "test_time_fraction": 0.2,
+    "cv_splits": 3,
+    "threshold": 0.5,
+    "primary_metric": "average_precision",
+    "n_jobs": 2,
+    "sampling_strategies": [
+      "none",
+      "under_smote"
+    ],
+    "under_ratio": 0.1,
+    "smote_ratio": 0.6,
+    "smote_neighbors": 3,
+    "models": {
+      "random_forest": {
+        "n_estimators": 160,
+        "max_depth": 14,
+        "min_samples_leaf": 2,
+        "max_features": "sqrt",
+        "criterion": "gini",
+        "class_weight": "balanced_subsample"
+      },
+      "xgboost": {
+        "n_estimators": 200,
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.0,
+        "reg_lambda": 1.0,
+        "min_child_weight": 3
+      }
+    }
+  },
+  "features": [
+    "Time",
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "V6",
+    "V7",
+    "V8",
+    "V9",
+    "V10",
+    "V11",
+    "V12",
+    "V13",
+    "V14",
+    "V15",
+    "V16",
+    "V17",
+    "V18",
+    "V19",
+    "V20",
+    "V21",
+    "V22",
+    "V23",
+    "V24",
+    "V25",
+    "V26",
+    "V27",
+    "V28",
+    "Amount"
+  ]
+}

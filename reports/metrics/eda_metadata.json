@@ -1,0 +1,9 @@
+{
+  "source": "TRAIN temporal sem reamostragem",
+  "rows": 210292,
+  "columns": 31,
+  "duplicates_train": 0,
+  "missing_total": 0,
+  "cutoff_time": 138233.6,
+  "duplicates_removed": 1081
+}

@@ -1,0 +1,4 @@
+outer_fold,threshold,cutoff_time,duplicates_removed,inner_fit_rows,inner_tune_rows,inner_fit_time_max,inner_tune_time_min,inner_tune_time_max,inner_tune_positives,outer_fit_rows,outer_validation_rows,outer_fit_time_max,outer_validation_time_min,outer_validation_time_max
+1,0.1,34089.6,0,26374,19466,34089.0,34090.0,42612.0,55,45840,58589,42612.0,42613.0,69254.0
+2,0.175,55403.200000000004,0,73767,30662,55403.0,55404.0,69254.0,47,104429,51704,69254.0,69255.0,108793.0
+3,0.4,87034.40000000001,0,144990,11143,87034.0,87035.0,108793.0,60,156133,54159,108793.0,108799.0,138230.0

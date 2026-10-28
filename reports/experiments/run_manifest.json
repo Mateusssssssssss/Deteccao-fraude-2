@@ -1,0 +1,64 @@
+{
+  "dataset_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+  "dataset_file": "creditcard.csv",
+  "config": {
+    "data_path": "data/raw/creditcard.csv",
+    "seed": 42,
+    "test_time_fraction": 0.2,
+    "cv_splits": 3,
+    "threshold": 0.5,
+    "primary_metric": "average_precision",
+    "n_jobs": 2,
+    "sampling_strategies": [
+      "none",
+      "under_smote"
+    ],
+    "under_ratio": 0.1,
+    "smote_ratio": 0.6,
+    "smote_neighbors": 3,
+    "models": {
+      "random_forest": {
+        "n_estimators": 160,
+        "max_depth": 14,
+        "min_samples_leaf": 2,
+        "max_features": "sqrt",
+        "criterion": "gini",
+        "class_weight": "balanced_subsample"
+      },
+      "xgboost": {
+        "n_estimators": 200,
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.0,
+        "reg_lambda": 1.0,
+        "min_child_weight": 3
+      }
+    }
+  },
+  "versions": {
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.7.2",
+    "imbalanced-learn": "0.14.2",
+    "xgboost": "3.4.1",
+    "matplotlib": "3.11.2"
+  },
+  "cutoff_time": 138233.6,
+  "duplicates_removed": 1081,
+  "train_rows": 210292,
+  "train_positives": 376,
+  "test_rows": 73434,
+  "test_positives": 97,
+  "oof_rows": 164452,
+  "oof_coverage": 0.7820173853498944,
+  "positive_class": 1,
+  "limitations": [
+    "Apenas dois dias; dependência temporal e intervalos não quantificados.",
+    "PCA fornecido pronto; ajuste original e rótulos não auditáveis.",
+    "Sem identificador de cartão, não se garante independência por cliente.",
+    "TEST histórico já explorado pelo projeto antigo; novo protocolo é retrospectivo.",
+    "AP não é área trapezoidal sob PR. Threshold fixo, sem calibração."
+  ]
+}

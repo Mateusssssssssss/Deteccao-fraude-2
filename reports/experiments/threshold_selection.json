@@ -1,0 +1,128 @@
+{
+  "model": "xgboost__none",
+  "threshold": 0.45,
+  "objective": "F2",
+  "positive_class": 1,
+  "settings": {
+    "model": "xgboost__none",
+    "objective": "f2",
+    "beta": 2.0,
+    "inner_validation_time_fraction": 0.2,
+    "thresholds": [
+      0.0,
+      0.0001,
+      0.0003,
+      0.001,
+      0.003,
+      0.005,
+      0.01,
+      0.02,
+      0.03,
+      0.05,
+      0.075,
+      0.1,
+      0.125,
+      0.15,
+      0.175,
+      0.2,
+      0.225,
+      0.25,
+      0.275,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ]
+  },
+  "experiment_config": {
+    "data_path": "data/raw/creditcard.csv",
+    "seed": 42,
+    "test_time_fraction": 0.2,
+    "cv_splits": 3,
+    "threshold": 0.5,
+    "primary_metric": "average_precision",
+    "n_jobs": 2,
+    "sampling_strategies": [
+      "none",
+      "under_smote"
+    ],
+    "under_ratio": 0.1,
+    "smote_ratio": 0.6,
+    "smote_neighbors": 3,
+    "models": {
+      "random_forest": {
+        "n_estimators": 160,
+        "max_depth": 14,
+        "min_samples_leaf": 2,
+        "max_features": "sqrt",
+        "criterion": "gini",
+        "class_weight": "balanced_subsample"
+      },
+      "xgboost": {
+        "n_estimators": 200,
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.0,
+        "reg_lambda": 1.0,
+        "min_child_weight": 3
+      }
+    }
+  },
+  "grid_size": 29,
+  "selected_inner_scores": {
+    "threshold": 0.45,
+    "f2": 0.7575757575757576,
+    "recall": 0.7692307692307693,
+    "precision": 0.7142857142857143,
+    "f1": 0.7407407407407407,
+    "alert_rate": 0.0007923332327195895,
+    "alerts": 42.0,
+    "tp": 30.0,
+    "fp": 12.0,
+    "fn": 9.0
+  },
+  "recall_only_reference": {
+    "threshold": 0.0003,
+    "f2": 0.01627441161742614,
+    "recall": 1.0,
+    "precision": 0.003297818366311517,
+    "f1": 0.006573957016434893,
+    "alert_rate": 0.22309840024147298,
+    "alerts": 11826.0,
+    "tp": 39.0,
+    "fp": 11787.0,
+    "fn": 0.0
+  },
+  "inner_split": {
+    "cutoff_time": 110584.0,
+    "duplicates_removed": 0,
+    "inner_fit_rows": 157284,
+    "inner_tune_rows": 53008,
+    "inner_fit_time_max": 110583.0,
+    "inner_tune_time_min": 110584.0,
+    "inner_tune_time_max": 138230.0,
+    "inner_tune_positives": 39
+  },
+  "train_test_split": {
+    "cutoff_time": 138233.6,
+    "duplicates_removed": 1081
+  },
+  "dataset_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+  "test_evaluated": false,
+  "limitations": [
+    "Melhor threshold somente na grade e janela consideradas; não ótimo universal.",
+    "CV externa valida a política de threshold; o limiar final é reajustado no TRAIN.",
+    "Receita XGBoost já selecionada antes com os mesmos dados: diagnóstico condicionado à seleção.",
+    "TEST histórico já visto e não reutilizado nesta rodada; falta avaliação externa nova.",
+    "F2 é preferência de métrica, não equivale a custo financeiro conhecido.",
+    "Refit no TRAIN completo pode mudar a distribuição dos scores; probabilidades não calibradas."
+  ]
+}
