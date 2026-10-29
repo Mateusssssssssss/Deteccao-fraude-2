@@ -582,3 +582,15 @@ Matrizes de confusão, curvas PR/ROC, calibração, métricas por classe e erros
 faixas estão no [notebook de TEST](notebooks/04_final_test_metrics.ipynb).
 Fontes: [métricas persistidas](reports/metrics/final_test_metrics.json) e
 [definições e fórmulas](reports/metrics/final_test_metric_definitions.csv).
+
+### Limitações metodológicas e avaliação
+
+O projeto passou por diferentes etapas de experimentação e aperfeiçoamento metodológico.
+
+Durante seu desenvolvimento, o conjunto de TEST foi avaliado e seus resultados ficaram conhecidos antes da conclusão de todas as análises e decisões posteriores.
+
+Embora os experimentos posteriores de treinamento, seleção de features e ajuste de threshold tenham utilizado apenas o conjunto de TRAIN e suas validações internas, o TEST histórico não pode mais ser considerado completamente independente dessas iterações.
+
+Portanto, as métricas apresentadas no TEST devem ser interpretadas como resultados retrospectivos, e não como uma estimativa definitiva da capacidade de generalização do modelo atualmente selecionado.
+
+**Próximos passos:** validar o procedimento final de seleção utilizando dados temporais ainda não observados, avaliar sua estabilidade em diferentes períodos e investigar a calibração das probabilidades e o impacto operacional dos falsos positivos e negativos.
