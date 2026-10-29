@@ -5,6 +5,6 @@ importance_repeats: 3
 selection_validation_time_fraction: 0.2
 smote_ratio: 0.1
 recipes: [raw_all, scaled_all, scaled_smote_all, scaled_selected, scaled_smote_selected]
-# F2 permanece a métrica de decisão escolhida pelo usuário.
+# Configuração histórica F2; a comparação atual usa sampling_comparison.yaml com F1.
 primary_metric: f2
 

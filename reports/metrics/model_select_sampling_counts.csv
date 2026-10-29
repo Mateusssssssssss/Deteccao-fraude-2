@@ -1,0 +1,4 @@
+strategy,model,fold,legitimate_before,fraud_before,legitimate_after,fraud_after,legitimate_removed,synthetic_frauds,ratio_after
+smote,random_forest__smote,1,45697,143,45697,4569,0,4426,0.0999846817077707
+smote,random_forest__smote,2,104202,227,104202,10420,0,10193,0.0999980806510431
+smote,random_forest__smote,3,155801,332,155801,15580,0,15248,0.0999993581555959

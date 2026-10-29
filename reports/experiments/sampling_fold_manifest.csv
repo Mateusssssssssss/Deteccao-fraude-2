@@ -1,0 +1,4 @@
+fold,fit_rows,validation_rows,fit_frauds,validation_frauds,fit_time_max,validation_time_min,validation_time_max,n_features
+1,45840,58589,143,84,42612.0,42613.0,69254.0,16
+2,104429,51704,227,105,69254.0,69255.0,108793.0,15
+3,156133,54159,332,44,108793.0,108799.0,138230.0,14

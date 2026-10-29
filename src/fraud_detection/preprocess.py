@@ -68,6 +68,16 @@ def build_pipeline(
                 ),
             )
         )
+    # Experimento isolado: remove apenas legítimas, sem criar exemplos sintéticos.
+    elif sampling == "under":
+        steps.append(
+            (
+                "under",
+                RandomUnderSampler(
+                    sampling_strategy=config["under_ratio"], random_state=config["seed"]
+                ),
+            )
+        )
     elif sampling != "none":
         raise ValueError(f"Amostragem desconhecida: {sampling}")
     # imblearn.Pipeline executa samplers só no fit; predict não reamostra entradas.

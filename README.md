@@ -17,18 +17,86 @@ Os arquivos originais foram preservados como registro em `docs/legacy/`.
 As duas imagens antigas diretamente em `reports/` também são históricas.
 Os resultados do novo protocolo ficam em `reports/metrics/` e `reports/figures/`.
 
-## Referência principal: F2
+## Critério principal atual: F1
 
-Decisão de 27/10/2026: **manter F2 como objetivo principal** das próximas
-comparações, com Precision, Recall, F1 e AP como métricas complementares.
-A primeira rodada por AP permanece registrada como histórico.
+Decisão de 28/10/2026: **F1 passa a orientar as comparações atuais**.
+Precision, Recall e AP continuam como métricas complementares. F1 dá o mesmo
+peso a Precision e Recall; os experimentos com F2/F3 abaixo são históricos.
 
-O pipeline de referência atual é **Random Forest + StandardScaler + SMOTE +
-seleção conjunta de 14 features**, com threshold **0,70** escolhido no TRAIN por F2.
-Artefato: `models/standardized_selected_pipeline.joblib`.
-O notebook `04_final_test_metrics.ipynb` apresenta sua avaliação retrospectiva
-no TEST histórico. F3 permanece documentado como experimento separado e não
-substitui essa referência. As próximas técnicas serão avaliadas em outra sessão.
+Os notebooks metricas_smotec.ipynb e metricas_under.ipynb usam threshold comum
+**0,50**, com gráficos de barras agrupadas de **F1, Recall e Precision**.
+Seus relatórios foram reagregados das mesmas contagens de CV, sem novo treino.
+
+O artefato models/standardized_selected_pipeline.joblib, com limiar **0,70**,
+e seu notebook 04 permanecem como registros da seleção anterior.
+Esta mudança não promove nem reavalia automaticamente um modelo novo no TEST.
+Uma escolha/refit/threshold orientada por F1 exigirá validação no TRAIN antes
+de outra avaliação externa.
+
+## Modelo escolhido — Random Forest com SMOTE, threshold 0,70
+
+O modelo escolhido para análise é **Random Forest com StandardScaler e somente
+SMOTE**, usando threshold **0,70**. Na **última janela de validação do TRAIN
+(fold 3)**, obteve **Precision de 89,19%, Recall de 75,00% e F1 de 81,48%**:
+33 fraudes detectadas, 11 não detectadas e 4 falsos alertas, em 54.159 transações
+com 44 fraudes. Esses valores não são métricas de TEST nem médias dos folds.
+
+### Por que este modelo foi escolhido?
+
+A escolha ocorreu após experimentar **Random Forest e XGBoost** com **somente
+SMOTE, somente undersampling e sem reamostragem**, além das análises anteriores
+de padronização, seleção de features e políticas de threshold. A decisão considerou
+o equilíbrio entre detectar fraudes e evitar alertas falsos, usando **F1 como
+métrica principal nas comparações atuais**.
+
+- **Escolha da receita:** na comparação das seis receitas com os mesmos três
+  folds temporais e threshold comum 0,50, Random Forest com SMOTE obteve o maior
+  **F1 médio: 79,55%**. No Random Forest, o controle sem reamostragem atingiu
+  76,53%, e somente undersampling, 60,08%. O undersampling aumentou Recall,
+  mas a queda de Precision reduziu F1. Essa evidência motivou manter RF com SMOTE.
+- **Escolha do threshold 0,70:** na última validação do TRAIN, esse limiar apresentou
+  o maior **F1 (81,48%) entre os thresholds avaliados**. Em relação a 0,50, os falsos
+  alertas caíram de **13 para 4**, Precision passou de **72,34% para 89,19%** e
+  Recall passou de **77,27% para 75,00%**: uma fraude a menos foi detectada
+  (de 34 para 33), em troca de nove falsos alertas a menos.
+- **Por que não aumentar mais:** em 0,80, os falsos alertas permaneceram em 4,
+  enquanto Recall caiu para **68,18%** e F1 para **76,92%**. Nessa janela,
+  aumentar o limiar não trouxe melhoria no equilíbrio medido por F1.
+
+A média de CV usada para comparar receitas e a última janela usada para analisar
+thresholds são recortes distintos. A escolha de 0,70 foi exploratória após inspeção;
+não demonstra um limiar universalmente ótimo nem confirmação independente.
+
+### Gráfico do modelo escolhido por threshold
+
+![Random Forest com SMOTE: F1, Recall e Precision por threshold na última validação do TRAIN](reports/figures/model_select_thresholds.png)
+
+A faixa cinza destaca **0,70**. Cada grupo mostra F1, Recall e Precision do mesmo
+Random Forest com SMOTE, na mesma janela de validação. Os percentuais estão
+rotulados nas barras; **o gráfico não apresenta resultados de TEST**.
+
+O [notebook model_select.ipynb](notebooks/model_select.ipynb) apresenta somente
+o modelo escolhido: barras de F1/Recall/Precision com rótulos, matriz de confusão,
+PR/AP e ROC, todas as métricas com definições, relatório por classe, calibração,
+correlação versus importância, sensibilidade por threshold e erros por faixa.
+Métricas por fold e OOF em 0,70 são mostradas em seções próprias, sem comparações
+com outros modelos. F1 continua sendo a métrica principal.
+
+```powershell
+.\.venv\Scripts\python.exe -m fraud_detection.model_select
+.\.venv\Scripts\python.exe scripts/execute_notebooks.py --notebook model_select.ipynb
+```
+
+Configuração: `configs/model_select.yaml`. O script reconstrói apenas os folds do
+RF escolhido e exige reproduzir as métricas do experimento original antes de
+salvar o diagnóstico. O notebook lê artefatos prontos de `reports/metrics/model_select_*`
+e figuras de `reports/figures/model_select_*`; abri-lo não dispara treinamento.
+
+**Limitação:** modelo e threshold foram escolhidos após inspecionar o TRAIN;
+as estimativas são exploratórias e condicionadas à escolha. Não houve novo TEST,
+refit final ou substituição do artefato histórico. As métricas retrospectivas de
+TEST permanecem separadas no notebook 04 e na seção específica abaixo. Uma
+confirmação independente após estas escolhas exige dados novos.
 
 ## Objetivo e dados
 
@@ -81,6 +149,9 @@ notebooks/01_eda.ipynb        # EDA somente TRAIN
 notebooks/02_model_training.ipynb  # protocolo, configuração e seleção
 notebooks/03_model_metrics.ipynb   # CV/OOF, diagnóstico e experimentos
 notebooks/04_final_test_metrics.ipynb  # todas as métricas do TEST histórico, referência F2
+notebooks/model_select.ipynb   # RF + SMOTE escolhido, threshold 0,70; validação TRAIN
+notebooks/metricas_smotec.ipynb # somente SMOTE numérico, com controles e diagnósticos
+notebooks/metricas_under.ipynb  # somente undersampling, com controles e diagnósticos
 src/fraud_detection/
   data.py                    # schema e split temporal
   preprocess.py              # imputação e sampling dentro do pipeline
@@ -138,7 +209,7 @@ depois de ver TEST, reserve outro período externo.
 
 ## Notebooks
 
-Os quatro notebooks leem relatórios já calculados; não treinam modelos de novo.
+Os notebooks leem relatórios já calculados; não treinam modelos de novo.
 Para abri-los:
 
 ```powershell
@@ -215,7 +286,7 @@ from fraud_detection.predict import predict
 
 # Execute pela raiz; transacoes deve conter Time, V1–V28 e Amount numéricos.
 transacoes = pd.read_csv("novas_transacoes.csv")
-# Pipeline principal: F2, threshold 0,70, 14 features mantidas.
+# Artefato histórico: threshold 0,70, 14 features; anterior ao retorno a F1.
 resultado = predict(transacoes, Path("models/standardized_selected_pipeline.joblib"))
 ```
 
@@ -387,3 +458,127 @@ O notebook 03 inclui a comparação F2/F3 em CV e a grade interna final.
 O notebook 04 continua mostrando exclusivamente o TEST histórico com threshold
 F2=0,70. **Não houve nova avaliação de TEST para F3.** O experimento com F3 foi
 realizado após observar esse teste; uma confirmação independente requer outro período.
+
+## SMOTE isolado e undersampling isolado — F1 principal
+
+Somente SMOTE e somente RandomUnderSampler foram testados em Random Forest
+e XGBoost, além do controle sem reamostragem. Nenhuma receita combina samplers.
+Mesmos folds, StandardScaler, features por fold, hiperparâmetros e pesos uniformes.
+**F1 é principal**, com threshold comum **0,50**.
+
+As métricas foram recalculadas das contagens de CV já persistidas:
+trocar a métrica principal não altera previsões, Precision ou Recall quando
+o threshold é mantido. Não foi necessário repetir o treino.
+
+| Família | Receita | F1 médio | Recall médio | Precision média | AP média |
+|---|---|---:|---:|---:|---:|
+| Random Forest | Sem reamostragem | 76.53% | 72.14% | 82.86% | 0.7494 |
+| Random Forest | Somente SMOTE | 79.55% | 76.31% | 83.74% | 0.7557 |
+| Random Forest | Somente under | 60.08% | 79.65% | 49.45% | 0.7427 |
+| XGBoost | Sem reamostragem | 77.64% | 69.00% | 90.68% | 0.7684 |
+| XGBoost | Somente SMOTE | 64.42% | 76.00% | 62.23% | 0.7646 |
+| XGBoost | Somente under | 55.54% | 77.90% | 46.64% | 0.7531 |
+
+SMOTE aumentou o F1 do Random Forest frente ao controle uniforme.
+Undersampling aumentou Recall com queda de Precision e F1 nas duas famílias.
+No XGBoost, SMOTE também aumentou Recall com queda de Precision e F1.
+Os resultados descrevem esta configuração, sem demonstrar superioridade universal.
+
+### Notebooks e gráficos
+
+- [metricas_smotec.ipynb](notebooks/metricas_smotec.ipynb): SMOTE numérico isolado.
+- [metricas_under.ipynb](notebooks/metricas_under.ipynb): somente undersampling.
+
+Cada gráfico principal tem **dois grupos — Random Forest e XGBoost — e três
+barras por grupo: F1-score, Recall e Precision**, em porcentagem.
+Os controles ficam nas tabelas. A sensibilidade por threshold também usa
+barras agrupadas dessas três métricas. F2 foi retirado das saídas atuais.
+
+Treino versus validação acompanha F1. Curvas AP/Log Loss do XGBoost, matriz OOF,
+PR/AP, ROC, correlação versus importância e diversidade de erros são complementares.
+
+### Amostragem e reprodução
+
+Razão final: uma fraude para dez legítimas. SMOTE preserva legítimas e cria
+exemplos sintéticos; under preserva fraudes e remove legítimas. A validação
+mantém a distribuição original. O nome metricas_smotec foi preservado;
+o algoritmo usado é SMOTE numérico.
+
+```powershell
+.\.venv\Scripts\python.exe -m fraud_detection.sampling_comparison --refresh-reports
+.\.venv\Scripts\python.exe scripts/execute_notebooks.py --notebook metricas_smotec.ipynb
+.\.venv\Scripts\python.exe scripts/execute_notebooks.py --notebook metricas_under.ipynb
+```
+
+--refresh-reports usa contagens calculadas, sem retreinar. Para um experimento
+novo, execute o módulo sem a opção, com --output numa pasta separada.
+Configuração: configs/sampling_comparison.yaml.
+
+[Relatório completo](reports/sampling_comparison_results.md).
+Tabelas: reports/metrics/sampling_comparison.csv, sampling_folds.csv,
+sampling_counts.csv e sampling_oof_metrics.csv; prefixos smote_ e under_
+identificam os demais arquivos. O manifesto registra a atualização sem fit.
+
+**Limites:** TRAIN/folds reutilizados; desvio não é intervalo de confiança.
+Threshold 0,50 é comum, sem nova otimização. OOF agregado difere da média dos folds.
+Nenhum novo TEST foi avaliado; o artefato histórico com limiar 0,70 foi preservado.
+
+## Métricas registradas no TEST — Random Forest com SMOTE, threshold 0,70
+
+Resultados já persistidos do **Random Forest com StandardScaler, somente SMOTE
+e seleção de 14 features**, com threshold **0,70**. SMOTE foi aplicado somente
+no treino; o TEST preserva a distribuição original. O nome `smotec` usado no
+notebook se refere a SMOTE numérico.
+
+O TEST contém **73.434 transações**, sendo **97 fraudes**
+e **73.337 legítimas**. A classe positiva é **fraude (Class=1)**.
+
+| Métrica | Resultado no TEST |
+|---|---:|
+| F1-score | 81,71% |
+| Recall (fraudes detectadas) | 69,07% |
+| Precision (fraudes entre os alertas) | 100,00% |
+| Especificidade | 100,00% |
+| Balanced Accuracy | 84,54% |
+| Acurácia | 99,9591% |
+| Valor preditivo negativo | 99,9591% |
+| Taxa de falsos positivos (FP / legítimas) | 0,0000% |
+| Taxa de falsos negativos (FN / fraudes) | 30,93% |
+| Parcela de alertas falsos (FP / alertas) | 0,00% |
+| Parcela de liberadas que era fraude (FN / liberadas) | 0,0409% |
+| Taxa de alertas | 0,0912% |
+| Prevalência de fraude | 0,1321% |
+| Average Precision (AP, resumo da curva PR) | 0,784309 |
+| Área trapezoidal da curva PR | 0,784139 |
+| ROC-AUC | 0,973428 |
+| Log Loss | 0,007464 |
+| Brier score | 0,000662 |
+| Matthews (MCC) | 0,830927 |
+| Kappa de Cohen | 0,816876 |
+
+| Resultado da decisão | Transações |
+|---|---:|
+| Fraudes detectadas (TP) | 67 |
+| Fraudes não detectadas (FN) | 30 |
+| Legítimas alertadas (FP) | 0 |
+| Legítimas liberadas (TN) | 73.337 |
+
+**Interpretação do threshold:** o modelo obteve **Precision de 100%** nesta
+amostra, com threshold **0,70**, mas deixou de detectar **30 das 97 fraudes**.
+Uma possibilidade para buscar maior Recall é **diminuir o threshold**, passando
+a alertar também transações com scores menores. Isso pode recuperar fraudes,
+mas também gerar falsos positivos e reduzir Precision; o ganho não é garantido.
+**Aumentar o threshold mantém ou reduz o Recall** para o mesmo modelo e dados.
+Qualquer novo limiar deve ser validado somente no TRAIN, por validação interna
+ou CV, e confirmado em dados novos, pois este TEST já foi consultado.
+
+**Limitação:** este TEST histórico já foi consultado durante a evolução do projeto.
+Os resultados são retrospectivos e não constituem confirmação independente após
+as iterações. Precision de 100% descreve esta amostra e não garante ausência de
+falsos alertas futuros. Nenhum novo treino, ajuste de threshold ou teste foi
+executado para registrar esta seção.
+
+Matrizes de confusão, curvas PR/ROC, calibração, métricas por classe e erros por
+faixas estão no [notebook de TEST](notebooks/04_final_test_metrics.ipynb).
+Fontes: [métricas persistidas](reports/metrics/final_test_metrics.json) e
+[definições e fórmulas](reports/metrics/final_test_metric_definitions.csv).

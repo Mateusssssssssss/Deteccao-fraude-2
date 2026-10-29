@@ -1,0 +1,129 @@
+{
+  "config": {
+    "data_path": "data/raw/creditcard.csv",
+    "seed": 42,
+    "test_time_fraction": 0.2,
+    "cv_splits": 3,
+    "threshold": 0.5,
+    "primary_metric": "average_precision",
+    "n_jobs": 2,
+    "sampling_strategies": [
+      "none",
+      "under_smote"
+    ],
+    "under_ratio": 0.1,
+    "smote_ratio": 0.6,
+    "smote_neighbors": 3,
+    "models": {
+      "random_forest": {
+        "n_estimators": 160,
+        "max_depth": 14,
+        "min_samples_leaf": 2,
+        "max_features": "sqrt",
+        "criterion": "gini",
+        "class_weight": "balanced_subsample"
+      },
+      "xgboost": {
+        "n_estimators": 200,
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.0,
+        "reg_lambda": 1.0,
+        "min_child_weight": 3
+      }
+    }
+  },
+  "feature_settings": {
+    "correlation_cutoff": 0.09,
+    "importance_cutoff": 0.1,
+    "importance": "permutation_average_precision",
+    "importance_repeats": 3,
+    "selection_validation_time_fraction": 0.2,
+    "smote_ratio": 0.1,
+    "recipes": [
+      "raw_all",
+      "scaled_all",
+      "scaled_smote_all",
+      "scaled_selected",
+      "scaled_smote_selected"
+    ],
+    "primary_metric": "f2"
+  },
+  "settings": {
+    "strategies": [
+      "smote",
+      "under",
+      "none"
+    ],
+    "families": [
+      "random_forest",
+      "xgboost"
+    ],
+    "primary_metric": "f1",
+    "threshold": 0.5,
+    "sampling_ratio": 0.1,
+    "permutation_repeats": 3,
+    "iteration_points": [
+      10,
+      25,
+      50,
+      100,
+      200
+    ],
+    "threshold_diagnostic_grid": [
+      0.01,
+      0.05,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9
+    ]
+  },
+  "dataset_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+  "train_rows": 210292,
+  "train_frauds": 376,
+  "cutoff_time": 138233.6,
+  "duplicates_removed": 1081,
+  "oof_rows": 164452,
+  "oof_coverage": 0.7820173853498944,
+  "positive_class": 1,
+  "threshold_policy": "Fixo 0.5 em todas as receitas",
+  "selection_metric": "F1 média na CV",
+  "winners": {
+    "smote": "random_forest__smote",
+    "under": "random_forest__under"
+  },
+  "sampling": {
+    "smote": "Somente SMOTE",
+    "under": "Somente RandomUnderSampler",
+    "none": "Sem sampler, pesos uniformes",
+    "smotec_notebook_alias": "SMOTE numérico"
+  },
+  "versions": {
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.7.2",
+    "imbalanced-learn": "0.14.2",
+    "xgboost": "3.4.1"
+  },
+  "test_evaluated": false,
+  "limitations": [
+    "Mesmos folds TRAIN reutilizados de rodadas anteriores; comparação exploratória.",
+    "Importância é diagnóstico condicionado à seleção; não confirma causalidade.",
+    "Threshold 0.5 fixado para isolar receitas; sensibilidade não seleciona outro limiar.",
+    "Mudanças de prevalência de treino podem afetar probabilidades não calibradas.",
+    "SMOTENC não se aplica às entradas exclusivamente numéricas deste dataset.",
+    "Não há novo refit/promoção de modelo nem avaliação do TEST histórico nesta rodada."
+  ],
+  "previous_reporting_primary_metric": "f2",
+  "fold_metrics_before_refresh_sha256": "bb5b50d91e537aced5584839b9821706e6c35a35888c2a822cb655adb9944f9e",
+  "metrics_recomputed_without_refit": true,
+  "primary_model_replaced": false
+}

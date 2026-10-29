@@ -1,0 +1,10 @@
+# "smotec" nos nomes dos notebooks é o nome solicitado; o sampler é SMOTE numérico.
+strategies: [smote, under, none]
+families: [random_forest, xgboost]
+primary_metric: f1
+threshold: 0.5
+sampling_ratio: 0.1
+permutation_repeats: 3
+iteration_points: [10, 25, 50, 100, 200]
+threshold_diagnostic_grid: [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+# Não há tuning de threshold nesta rodada; a grade acima é somente descritiva.

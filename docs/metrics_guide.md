@@ -1,5 +1,7 @@
 # Guia das métricas e tabelas
 
+Critério atual (28/10/2026): **F1** nas comparações de SMOTE e under, com threshold 0,50. F2/F3 abaixo descrevem os experimentos históricos.
+
 Uma linha é uma transação. Classe positiva: **Class=1, fraude confirmada no dataset**.
 Class=0 é transação legítima. O rótulo não distingue tipos de fraude; não existem
 categorias como cartão clonado, identidade falsa etc. As categorias mostradas nos
@@ -63,7 +65,7 @@ dos rótulos. Um falso positivo requer uma previsão, além do rótulo.
 | Recall / sensibilidade | TP / (TP+FN): dentre todas as fraudes reais, qual fração foi detectada? | Maior; reduz FN. |
 | Precision / precisão dos alertas | TP / (TP+FP): dentre os alertas, qual fração era fraude real? | Maior; reduz alertas inúteis. |
 | F1 | 2 × Precision × Recall / (Precision+Recall); média harmônica dos dois. | Maior; equilíbrio simétrico. |
-| F2 | 5 × Precision × Recall / (4×Precision+Recall); dá maior ênfase ao Recall. | Maior; objetivo das rodadas posteriores. Não representa um custo financeiro conhecido. |
+| F2 | 5 × Precision × Recall / (4×Precision+Recall); dá maior ênfase ao Recall. | Maior; objetivo das rodadas históricas de F2. Não representa um custo financeiro conhecido. |
 | Specificity / especificidade | TN / (TN+FP): fração de legítimas corretamente liberadas. | Maior. |
 | Balanced Accuracy | (Recall+Specificity)/2; média das sensibilidades das duas classes. | Maior. |
 | Accuracy / acurácia | (TP+TN)/(TP+TN+FP+FN); proporção total de acertos. | Pode ser enganosa em classe rara. |
@@ -84,7 +86,7 @@ isso significa **não definido**, não desempenho nulo.
 |---|---|
 | Average Precision (AP) | Resumo de Precision ao aumentar Recall sobre scores contínuos, ponderado pelo ganho de Recall. Usa probabilidades/scores, não rótulos. Maior é melhor. Referência ingênua próxima à prevalência da fraude. |
 | Curva Precision–Recall | Eixo X: Recall; eixo Y: Precision. Cada ponto corresponde a um threshold. Mudar só o threshold escolhe outro ponto da mesma curva. |
-| AUPRC trapezoidal | Área por integração trapezoidal da curva PR; pode diferir de AP. Neste projeto o resumo principal persistido é AP, indicado explicitamente nas legendas. |
+| AUPRC trapezoidal | Área por integração trapezoidal da curva PR; pode diferir de AP. O resumo persistido da curva PR é AP, indicado explicitamente nas legendas. |
 | ROC-AUC | Capacidade de ordenar fraude acima de legítima, resumindo TPR contra FPR. Maior é melhor, mas pode parecer alto mesmo com muitos falsos alertas em classe rara. |
 | Log Loss | Penaliza probabilidades erradas, especialmente erros confiantes. Menor é melhor. |
 | Brier score | Média do erro quadrático entre probabilidade prevista e rótulo 0/1. Menor é melhor; não comprova calibração por si só. |
@@ -102,7 +104,7 @@ OOF agrega previsões em janelas não usadas no ajuste dos respectivos modelos.
 Só parte do TRAIN tem previsão OOF temporal: o prefixo inicial serve só para
 treinar. Métrica OOF agregada não precisa coincidir com a média dos folds.
 
-O threshold é o limiar de alerta. GridSearchCV de threshold usa janela interna
+O threshold é o limiar de alerta. Nas rodadas históricas, GridSearchCV de threshold usou janela interna
 ao treino e F2 como objetivo. Outra janela externa avalia essa política de ajuste;
 cada fold pode escolher um limiar diferente. O limiar final é escolhido novamente
 no TRAIN, portanto os números externos avaliam a política, não esse limiar final

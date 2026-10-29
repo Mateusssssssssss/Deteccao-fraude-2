@@ -1,0 +1,7 @@
+# Receita escolhida pelo usuário a partir da última validação do TRAIN.
+model: random_forest__smote
+threshold: 0.7
+primary_metric: f1
+reference_fold: 3
+reference_source: reports/metrics/smote_threshold_sensitivity.csv
+# A escolha ocorreu após inspecionar os folds; não é validação externa ao threshold.

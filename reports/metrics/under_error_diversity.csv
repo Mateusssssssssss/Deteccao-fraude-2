@@ -1,0 +1,2 @@
+model_a,model_b,source,disagreement,double_fault,both_correct,only_a_wrong,only_b_wrong
+random_forest,xgboost,OOF temporal TRAIN alinhado,0.0014107459927516844,0.0008938778488555931,0.9976953761583928,0.0005107873422031961,0.0008999586505484883

@@ -144,7 +144,7 @@ def metric_dictionary(result: dict) -> pd.DataFrame:
         (
             "prevalence",
             "Prevalência de fraude",
-            "(TP+FN)/n: frequência real de fraude no TEST",
+            "(TP+FN)/n: frequência real de fraude na amostra avaliada",
             "%",
             "Descritiva",
         ),
@@ -228,7 +228,16 @@ def calibration_table(y, probability) -> pd.DataFrame:
     return table
 
 
-def save_figures(y, probability, threshold: float, figures: Path, calibration) -> None:
+def save_figures(
+    y,
+    probability,
+    threshold: float,
+    figures: Path,
+    calibration,
+    *,
+    prefix: str = "final_test",
+    label: str = "TEST histórico — Random Forest filtrada",
+) -> None:
     """Curvas e distribuições só descrevem o modelo pronto; não escolhem outro threshold."""
     predicted = probability >= threshold
     tn, fp, fn, tp = np.bincount(2 * np.asarray(y, dtype=int) + predicted.astype(int), minlength=4)
@@ -248,13 +257,13 @@ def save_figures(y, probability, threshold: float, figures: Path, calibration) -
             xlabel="Classe prevista",
             ylabel="Classe real",
         )
-    fig.suptitle(f"TEST histórico — Random Forest filtrada; threshold {threshold:g}")
+    fig.suptitle(f"{label}; threshold {threshold:g}")
     fig.tight_layout()
-    fig.savefig(figures / "final_test_confusion.png", dpi=160)
+    fig.savefig(figures / f"{prefix}_confusion.png", dpi=160)
     plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-    PrecisionRecallDisplay.from_predictions(y, probability, ax=axes[0], name="TEST histórico")
+    PrecisionRecallDisplay.from_predictions(y, probability, ax=axes[0], name=label)
     axes[0].axhline(np.mean(y), linestyle="--", color="gray", label="Prevalência")
     axes[0].scatter(
         ratio(tp, tp + fn),
@@ -267,12 +276,12 @@ def save_figures(y, probability, threshold: float, figures: Path, calibration) -
         xlabel="Recall", ylabel="Precision", title="Precision–Recall (resumo principal: AP)"
     )
     axes[0].legend(fontsize=8)
-    RocCurveDisplay.from_predictions(y, probability, ax=axes[1], name="TEST histórico")
+    RocCurveDisplay.from_predictions(y, probability, ax=axes[1], name=label)
     axes[1].plot([0, 1], [0, 1], linestyle="--", color="gray")
     axes[1].scatter(ratio(fp, fp + tn), ratio(tp, tp + fn), color="red", zorder=5)
     axes[1].set(xlabel="Taxa de falsos positivos (FPR)", ylabel="Recall (TPR)", title="ROC")
     fig.tight_layout()
-    fig.savefig(figures / "final_test_pr_roc.png", dpi=160)
+    fig.savefig(figures / f"{prefix}_pr_roc.png", dpi=160)
     plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
@@ -284,14 +293,14 @@ def save_figures(y, probability, threshold: float, figures: Path, calibration) -
         title="Confiabilidade por faixas de score (sem recalibrar)",
     )
     axes[0].legend()
-    for value, label in [(0, "Legítima"), (1, "Fraude")]:
+    for value, class_label in [(0, "Legítima"), (1, "Fraude")]:
         values = probability[np.asarray(y) == value]
         axes[1].hist(
             values,
             bins=np.linspace(0, 1, 31),
             weights=np.ones(len(values)) / len(values),
             alpha=0.6,
-            label=label,
+            label=class_label,
         )
     axes[1].axvline(threshold, linestyle="--", color="black", label="Threshold congelado")
     axes[1].set(
@@ -301,7 +310,7 @@ def save_figures(y, probability, threshold: float, figures: Path, calibration) -
     )
     axes[1].legend()
     fig.tight_layout()
-    fig.savefig(figures / "final_test_calibration_scores.png", dpi=160)
+    fig.savefig(figures / f"{prefix}_calibration_scores.png", dpi=160)
     plt.close(fig)
 
 
