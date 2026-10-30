@@ -1,0 +1,212 @@
+{
+  "best_params": {
+    "learning_rate": 0.01,
+    "max_depth": 4,
+    "n_estimators": 200,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0
+  },
+  "threshold": 0.6,
+  "primary_metric": "f1",
+  "family": "xgboost",
+  "best_cv_score": 0.8245342575973262,
+  "threshold_objective": "f1",
+  "best_cv_ap": 0.7602355102059624,
+  "validation_used_for_selection": false,
+  "config": {
+    "data_path": "data/raw/creditcard.csv",
+    "seed": 42,
+    "test_time_fraction": 0.2,
+    "cv_splits": 3,
+    "threshold": 0.5,
+    "primary_metric": "average_precision",
+    "n_jobs": 2,
+    "sampling_strategies": [
+      "none",
+      "under_smote"
+    ],
+    "under_ratio": 0.1,
+    "smote_ratio": 0.6,
+    "smote_neighbors": 3,
+    "models": {
+      "random_forest": {
+        "n_estimators": 160,
+        "max_depth": 14,
+        "min_samples_leaf": 2,
+        "max_features": "sqrt",
+        "criterion": "gini",
+        "class_weight": "balanced_subsample"
+      },
+      "xgboost": {
+        "n_estimators": 200,
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.0,
+        "reg_lambda": 1.0,
+        "min_child_weight": 3
+      }
+    }
+  },
+  "settings": {
+    "experiment_name": "xgboost_f1_threshold",
+    "reuse_from": ".",
+    "reuse_prefix": "xgboost_learning_rate",
+    "primary_metric": "f1",
+    "cv_splits": 3,
+    "sampling_ratio": 0.1,
+    "model_n_jobs": 2,
+    "search_n_jobs": 2,
+    "permutation_repeats": 3,
+    "iteration_points": [
+      25,
+      50,
+      100,
+      200,
+      400
+    ],
+    "param_grid": {
+      "max_depth": [
+        3,
+        4,
+        6
+      ],
+      "n_estimators": [
+        100,
+        200,
+        400
+      ],
+      "reg_alpha": [
+        0.0,
+        1.0
+      ],
+      "reg_lambda": [
+        0.0,
+        1.0,
+        5.0
+      ],
+      "learning_rate": [
+        0.01,
+        0.05,
+        0.1
+      ]
+    },
+    "threshold_objective": "f1",
+    "thresholds": [
+      0.0,
+      0.001,
+      0.005,
+      0.01,
+      0.02,
+      0.03,
+      0.05,
+      0.075,
+      0.1,
+      0.125,
+      0.15,
+      0.175,
+      0.2,
+      0.225,
+      0.25,
+      0.275,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.95,
+      1.0
+    ],
+    "family": "xgboost",
+    "cv_reference_threshold": 0.5
+  },
+  "feature_settings": {
+    "correlation_cutoff": 0.09,
+    "importance_cutoff": 0.1,
+    "importance": "permutation_average_precision",
+    "importance_repeats": 3,
+    "selection_validation_time_fraction": 0.2,
+    "smote_ratio": 0.1,
+    "recipes": [
+      "raw_all",
+      "scaled_all",
+      "scaled_smote_all",
+      "scaled_selected",
+      "scaled_smote_selected"
+    ],
+    "primary_metric": "f2"
+  },
+  "reuse": {
+    "manifest_sha256": "4731d085bda0beac3d2386a319e8e05b6cf1e386097c7b30e09af10cc18ba091",
+    "cv_scores_sha256": "ea023c5a685196dadf4a2c26fae6cc3dddeecf02a2edf2265f3d501d396012a5",
+    "origin_prefix": "xgboost_learning_rate",
+    "candidates": 162
+  },
+  "combinations": 162,
+  "grid_fits": 324,
+  "cv_seconds": 39.987610499956645,
+  "versions": {
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.7.2",
+    "imbalanced-learn": "0.14.2",
+    "xgboost": "3.4.1"
+  },
+  "inner_folds": 2,
+  "executed_grid_fits": 0,
+  "reused_grid_fits": 324,
+  "train_rows": 210292,
+  "search_fit_rows": 119920,
+  "threshold_rows": 36213,
+  "threshold_frauds": 90,
+  "threshold_time_min": 75811.0,
+  "threshold_time_max": 108793.0,
+  "search_fit_time_max": 75810.0,
+  "validation_time_min": 108799.0,
+  "validation_time_max": 138230.0,
+  "validation_rows": 54159,
+  "validation_frauds": 44,
+  "selected_features": [
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "V7",
+    "V9",
+    "V10",
+    "V11",
+    "V12",
+    "V14",
+    "V16",
+    "V17",
+    "V18"
+  ],
+  "dataset_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+  "artifact_sha256": "60ba7c5e5aab5efef2059be96ca934828a6a38b69abe3fcd2500ca63a7c18f45",
+  "test_evaluated": false,
+  "selected_random_forest_replaced": false,
+  "refit_after_threshold": false,
+  "cv_reference_threshold": 0.5,
+  "split": {
+    "cutoff_time": 138233.6,
+    "duplicates_removed": 1081
+  },
+  "limitations": [
+    "F1 equilibra Precision e Recall; AP permanece diagnóstico quando F1 é a métrica de seleção.",
+    "Seleção usa somente os folds anteriores à janela de threshold; limiar final é ajustado por F1 nessa janela.",
+    "Na CV de parâmetros, F1/Recall/Precision usam a referência comum 0,50; o limiar operacional não fica fixado nesse valor.",
+    "Validação TRAIN ficou fora de ambas as escolhas nesta rodada, mas o histórico já explorou esses dados.",
+    "O mesmo pipeline congelado usado no threshold é aplicado à validação, sem refit posterior ou calibração.",
+    "Não houve novo TEST; confirmação independente exige dados novos."
+  ]
+}

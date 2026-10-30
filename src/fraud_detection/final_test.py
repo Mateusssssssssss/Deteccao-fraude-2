@@ -83,7 +83,7 @@ def metric_dictionary(result: dict) -> pd.DataFrame:
             "Maior",
         ),
         ("f1", "F1", "2PR/(P+R): média harmônica simétrica de Precision e Recall", "%", "Maior"),
-        ("f2", "F2", "5PR/(4P+R): favorece Recall; objetivo usado no TRAIN", "%", "Maior"),
+        ("f2", "F2", "5PR/(4P+R): favorece Recall; métrica complementar ao F1", "%", "Maior"),
         (
             "specificity",
             "Especificidade",
@@ -318,13 +318,15 @@ def run(
     artifact_path=ROOT / "models/standardized_selected_pipeline.joblib",
     selection_path=ROOT / "reports/experiments/ablation_selection.json",
     output=ROOT,
+    *,
+    prefix: str = "final_test",
 ) -> dict:
     """Carrega o artefato congelado e preserva os resultados de avaliações anteriores."""
     artifact_path, selection_path, output = map(Path, [artifact_path, selection_path, output])
     md, ed, fd = [output / p for p in ["reports/metrics", "reports/experiments", "reports/figures"]]
     for folder in [md, ed, fd]:
         folder.mkdir(parents=True, exist_ok=True)
-    result_path = md / "final_test_metrics.json"
+    result_path = md / f"{prefix}_metrics.json"
     if result_path.exists():
         raise FileExistsError("Esta avaliação já existe; use --output para reprodução separada.")
 
@@ -346,9 +348,9 @@ def run(
     probability = artifact["pipeline"].predict_proba(test[artifact["features"]])[:, 1]
     result = complete_metrics(test[TARGET], probability, threshold)
     calibration = calibration_table(test[TARGET], probability)
-    save_figures(test[TARGET], probability, threshold, fd, calibration)
-    metric_dictionary(result).to_csv(md / "final_test_metric_definitions.csv", index=False)
-    calibration.to_csv(md / "final_test_calibration.csv", index=False)
+    save_figures(test[TARGET], probability, threshold, fd, calibration, prefix=prefix)
+    metric_dictionary(result).to_csv(md / f"{prefix}_metric_definitions.csv", index=False)
+    calibration.to_csv(md / f"{prefix}_calibration.csv", index=False)
 
     # Métricas por classe incluem suporte e médias macro/ponderada em arquivo próprio.
     predicted = probability >= threshold
@@ -360,14 +362,14 @@ def run(
         output_dict=True,
         zero_division=0,
     )
-    (md / "final_test_classification_report.json").write_text(
+    (md / f"{prefix}_classification_report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
     # Faixas das features são aprendidas no TRAIN e aplicadas ao TEST, sem vazamento.
     segments = error_rates_by_bins(train, test, probability, threshold, "TEST histórico")
     segments["source"] = "TEST histórico reavaliado; bins aprendidos no TRAIN"
-    segments.to_csv(md / "final_test_feature_segments.csv", index=False)
+    segments.to_csv(md / f"{prefix}_feature_segments.csv", index=False)
 
     # Janelas temporais do próprio TEST servem só à descrição posterior dos erros.
     windows = pd.cut(test.Time, bins=4)
@@ -391,7 +393,7 @@ def run(
                 "fraud_rate_pct": 100 * ratio(tp + fn, mask.sum()),
             }
         )
-    pd.DataFrame(temporal).to_csv(md / "final_test_time_segments.csv", index=False)
+    pd.DataFrame(temporal).to_csv(md / f"{prefix}_time_segments.csv", index=False)
 
     result.update(
         {
@@ -426,12 +428,13 @@ def run(
             "Subgrupos e faixas são diagnósticos posteriores, não motivos para retuning neste TEST.",
         ],
     }
-    (ed / "final_test_manifest.json").write_text(
+    (ed / f"{prefix}_manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     # Grava o resultado só após completar todos os relatórios, evitando saída parcial travada.
     result_path.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
-    write_report(result, output)
+    if prefix == "final_test":
+        write_report(result, output)
     LOGGER.info("TEST histórico: %s", result)
     return result
 
@@ -468,7 +471,7 @@ def write_report(result: dict, output: Path) -> None:
         "",
         (
             "Definições, unidades e todas as métricas: reports/metrics/final_test_metric_definitions.csv. "
-            "Notebook dedicado: notebooks/04_final_test_metrics.ipynb."
+            "Notebook atual do modelo escolhido: notebooks/best_model_metrics.ipynb (relatórios próprios)."
         ),
         "",
         "![Matriz](figures/final_test_confusion.png)",

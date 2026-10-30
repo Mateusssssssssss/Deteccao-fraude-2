@@ -1,596 +1,229 @@
 # Detecção de fraude — projeto reformulado
 
-Este repositório é uma **reformulação do [Projeto-Deteccao-De-Fraude](https://github.com/Mateusssssssssss/Projeto-Deteccao-De-Fraude)**,
-criado no início da minha caminhada em Ciência de Dados e Machine Learning.
-Ao revisitar o trabalho, identifiquei vazamento de dados (*data leakage*) no fluxo
-de balanceamento. Esta versão registra essa evolução: corrige a metodologia,
-organiza o código e torna a análise e a avaliação reproduzíveis.
+Este projeto é uma **reformulação do [Projeto-Deteccao-De-Fraude](https://github.com/Mateusssssssssss/Projeto-Deteccao-De-Fraude)**, criado no início da minha caminhada em Ciência de Dados e Machine Learning. A reformulação corrige o vazamento de dados causado pela aplicação de SMOTE e undersampling antes do split, organiza os experimentos e disponibiliza o modelo escolhido por uma API.
 
-Na versão anterior, undersampling e SMOTE eram aplicados à base inteira antes do
-split; a seleção por correlação também via toda a base, e a validação cruzada
-recebia dados já reamostrados. Além disso, Average Precision era calculada com
-rótulos, em vez de probabilidades. Por isso, **as métricas antigas não são
-evidência válida da capacidade de generalização** e não são diretamente
-comparáveis aos resultados desta reformulação.
+## Modelo escolhido — Random Forest + SMOTE
 
-Os arquivos originais foram preservados como registro em `docs/legacy/`.
-As duas imagens antigas diretamente em `reports/` também são históricas.
-Os resultados do novo protocolo ficam em `reports/metrics/` e `reports/figures/`.
+**Threshold: 0,70. Métrica principal: F1. Classe positiva: fraude (Class=1).**
 
-## Critério principal atual: F1
+O modelo foi escolhido a partir das análises de SMOTE isolado em [metricas_smotec.ipynb](notebooks/metricas_smotec.ipynb) e do diagnóstico em [model_select.ipynb](notebooks/model_select.ipynb). Na última validação temporal de TRAIN, apresentou **89,19% de Precision, 75,00% de Recall e 81,48% de F1**.
 
-Decisão de 28/10/2026: **F1 passa a orientar as comparações atuais**.
-Precision, Recall e AP continuam como métricas complementares. F1 dá o mesmo
-peso a Precision e Recall; os experimentos com F2/F3 abaixo são históricos.
+A escolha considera o equilíbrio entre detecção de fraudes e qualidade dos alertas, depois de comparar Random Forest e XGBoost com diferentes estratégias de balanceamento, padronização, seleção de features e thresholds. Ela corresponde à receita escolhida pelo autor; não representa o vencedor de todas as grades posteriores.
 
-Os notebooks metricas_smotec.ipynb e metricas_under.ipynb usam threshold comum
-**0,50**, com gráficos de barras agrupadas de **F1, Recall e Precision**.
-Seus relatórios foram reagregados das mesmas contagens de CV, sem novo treino.
+| Configuração | Valor |
+|---|---|
+| Estimador | RandomForestClassifier |
+| n_estimators | 160 |
+| max_depth | 14 |
+| min_samples_leaf | 2 |
+| max_features / criterion | sqrt / gini |
+| class_weight | None |
+| random_state | 42 |
+| Pré-processamento | Imputação pela mediana + StandardScaler |
+| Balanceamento | SMOTE, razão minoria/maioria 0,10; k_neighbors=3 |
+| Threshold fixo | 0,70 |
+| Features mantidas | 14 |
 
-O artefato models/standardized_selected_pipeline.joblib, com limiar **0,70**,
-e seu notebook 04 permanecem como registros da seleção anterior.
-Esta mudança não promove nem reavalia automaticamente um modelo novo no TEST.
-Uma escolha/refit/threshold orientada por F1 exigirá validação no TRAIN antes
-de outra avaliação externa.
+Features: V1, V2, V3, V4, V5, V7, V9, V10, V11, V12, V14, V16, V17 e V18.
 
-## Modelo escolhido — Random Forest com SMOTE, threshold 0,70
+O gráfico abaixo apresenta a sensibilidade do modelo aos thresholds na última validação TRAIN. A faixa cinza destaca 0,70.
 
-O modelo escolhido para análise é **Random Forest com StandardScaler e somente
-SMOTE**, usando threshold **0,70**. Na **última janela de validação do TRAIN
-(fold 3)**, obteve **Precision de 89,19%, Recall de 75,00% e F1 de 81,48%**:
-33 fraudes detectadas, 11 não detectadas e 4 falsos alertas, em 54.159 transações
-com 44 fraudes. Esses valores não são métricas de TEST nem médias dos folds.
+![Métricas de validação do modelo escolhido](reports/figures/model_select_thresholds.png)
 
-### Por que este modelo foi escolhido?
+A pasta [best_model/](best_model/) reúne o pipeline serializado, metadados, versões das dependências, exemplo de requisição e referência do registro no MLflow. O pacote utiliza o ajuste existente no TRAIN completo, com a mesma receita e features do modelo escolhido. Os 89,19% / 75,00% acima pertencem à validação do fold, não ao ajuste no TRAIN completo.
 
-A escolha ocorreu após experimentar **Random Forest e XGBoost** com **somente
-SMOTE, somente undersampling e sem reamostragem**, além das análises anteriores
-de padronização, seleção de features e políticas de threshold. A decisão considerou
-o equilíbrio entre detectar fraudes e evitar alertas falsos, usando **F1 como
-métrica principal nas comparações atuais**.
+## Resultado no TEST — modelo escolhido
 
-- **Escolha da receita:** na comparação das seis receitas com os mesmos três
-  folds temporais e threshold comum 0,50, Random Forest com SMOTE obteve o maior
-  **F1 médio: 79,55%**. No Random Forest, o controle sem reamostragem atingiu
-  76,53%, e somente undersampling, 60,08%. O undersampling aumentou Recall,
-  mas a queda de Precision reduziu F1. Essa evidência motivou manter RF com SMOTE.
-- **Escolha do threshold 0,70:** na última validação do TRAIN, esse limiar apresentou
-  o maior **F1 (81,48%) entre os thresholds avaliados**. Em relação a 0,50, os falsos
-  alertas caíram de **13 para 4**, Precision passou de **72,34% para 89,19%** e
-  Recall passou de **77,27% para 75,00%**: uma fraude a menos foi detectada
-  (de 34 para 33), em troca de nove falsos alertas a menos.
-- **Por que não aumentar mais:** em 0,80, os falsos alertas permaneceram em 4,
-  enquanto Recall caiu para **68,18%** e F1 para **76,92%**. Nessa janela,
-  aumentar o limiar não trouxe melhoria no equilíbrio medido por F1.
+Avaliação de **73.434 transações**, com **97 fraudes** e **73.337 legítimas**, usando o pipeline congelado e threshold 0,70.
 
-A média de CV usada para comparar receitas e a última janela usada para analisar
-thresholds são recortes distintos. A escolha de 0,70 foi exploratória após inspeção;
-não demonstra um limiar universalmente ótimo nem confirmação independente.
+| Métrica | TEST |
+|---|---:|
+| Precision | 100,00% |
+| Recall | 69,07% |
+| F1 | 81,71% |
+| Average Precision — AP/AUPRC | 0,7843 |
+| Área trapezoidal PR | 0,7841 |
+| ROC-AUC | 0,9734 |
+| Balanced Accuracy | 84,54% |
+| Especificidade | 100,00% |
+| Acurácia | 99,96% |
+| Log Loss | 0,007464 |
+| Brier score | 0,000662 |
+| TP — fraudes detectadas | 67 |
+| FN — fraudes não detectadas | 30 |
+| FP — legítimas alertadas | 0 |
+| TN — legítimas liberadas | 73.337 |
 
-### Gráfico do modelo escolhido por threshold
+![F1, Recall e Precision no TEST](reports/figures/best_model_f1_recall_precision.png)
 
-![Random Forest com SMOTE: F1, Recall e Precision por threshold na última validação do TRAIN](reports/figures/model_select_thresholds.png)
+O notebook [best_model_metrics.ipynb](notebooks/best_model_metrics.ipynb) contém todas as métricas com definições, relatório por classe, matriz de confusão, curvas PR/AUPRC e ROC, calibração, scores e erros por faixas/período. A validação aparece em seção própria.
 
-A faixa cinza destaca **0,70**. Cada grupo mostra F1, Recall e Precision do mesmo
-Random Forest com SMOTE, na mesma janela de validação. Os percentuais estão
-rotulados nas barras; **o gráfico não apresenta resultados de TEST**.
+### Potencial de melhoria e prioridade do Recall
 
-O [notebook model_select.ipynb](notebooks/model_select.ipynb) apresenta somente
-o modelo escolhido: barras de F1/Recall/Precision com rótulos, matriz de confusão,
-PR/AP e ROC, todas as métricas com definições, relatório por classe, calibração,
-correlação versus importância, sensibilidade por threshold e erros por faixa.
-Métricas por fold e OOF em 0,70 são mostradas em seções próprias, sem comparações
-com outros modelos. F1 continua sendo a métrica principal.
+**O modelo ainda pode ser aprimorado, principalmente na recuperação de fraudes.** No TEST apresentado, a Precision de 100% coexistiu com Recall de 69,07%: 30 das 97 fraudes não foram detectadas. Portanto, alta Precision, isoladamente, não caracteriza cobertura suficiente da classe positiva.
 
-```powershell
-.\.venv\Scripts\python.exe -m fraud_detection.model_select
-.\.venv\Scripts\python.exe scripts/execute_notebooks.py --notebook model_select.ipynb
-```
+Na aplicação proposta, **o Recall tem maior prioridade operacional que a Precision quando o custo de uma fraude não detectada (falso negativo) supera o custo de investigar um alerta indevido (falso positivo)**. Essa assimetria deve orientar a decisão por meio do custo esperado dos erros, por exemplo, **C_FN × FN + C_FP × FP**, em que os custos podem variar conforme o valor da transação e a ação tomada. A Precision continua relevante para controlar o volume de revisão, os bloqueios indevidos e o atrito com clientes.
 
-Configuração: `configs/model_select.yaml`. O script reconstrói apenas os folds do
-RF escolhido e exige reproduzir as métricas do experimento original antes de
-salvar o diagnóstico. O notebook lê artefatos prontos de `reports/metrics/model_select_*`
-e figuras de `reports/figures/model_select_*`; abri-lo não dispara treinamento.
+Uma evolução do projeto pode buscar **maximizar Recall sujeito a uma Precision mínima e à capacidade de análise de alertas**, com restrições definidas pelo negócio. A redução do threshold é uma alternativa a investigar, pois pode recuperar mais fraudes ao custo de mais falsos positivos. Esse ajuste e a comparação de novas estratégias devem ocorrer somente nas validações do TRAIN, com avaliação posterior em dados separados. O ganho precisa ser demonstrado; não é garantido pela alteração do limiar. A configuração atual permanece com **F1 como métrica principal e threshold 0,70**.
 
-**Limitação:** modelo e threshold foram escolhidos após inspecionar o TRAIN;
-as estimativas são exploratórias e condicionadas à escolha. Não houve novo TEST,
-refit final ou substituição do artefato histórico. As métricas retrospectivas de
-TEST permanecem separadas no notebook 04 e na seção específica abaixo. Uma
-confirmação independente após estas escolhas exige dados novos.
+## Dados e protocolo
 
-## Objetivo e dados
+Base creditcard.csv: transações de cartão, Time, Amount, V1–V28 e target Class. Cada linha representa uma transação; a previsão considera as medidas disponíveis naquele momento. V1–V28 são componentes anonimizados fornecidos pela base, não features que esta API calcula a partir de uma transação bancária bruta.
 
-Classificar uma transação no momento da autorização: **Class=1 é fraude**;
-Class=0 é legítima. Um falso negativo deixa passar fraude; um falso positivo
-pode gerar bloqueio ou revisão indevida. Não foram informados custos financeiros
-nem capacidade de revisão; o threshold inicial é fixo em 0,5.
+- Arquivo original em data/raw/creditcard.csv, preservado e fora do Git.
+- 284.807 linhas originais; 1.081 duplicatas exatas removidas de forma determinística.
+- Separação temporal antes de aprender estatísticas: TRAIN com 210.292 linhas; TEST com 73.434.
+- EDA que orienta modelagem, seleção de features, imputação, padronização, CV, resampling e threshold usam TRAIN.
+- CV temporal mantém o treino anterior à validação e instantes empatados no mesmo lado.
+- SMOTE e undersampling são ajustados somente no treino de cada fold, via pipeline imbalanced-learn.
+- A regra solicitada remove uma feature apenas se ambas forem verdadeiras: |Pearson| < 0,090 e importância por permutação AP < 0,100.
+- Na inferência, o pipeline aplica as transformações já ajustadas; não treina nem executa SMOTE.
 
-A base é `creditcard.csv`, descrita em `context.txt`: transações europeias de
-dois dias de setembro de 2013, features numéricas Time, Amount e V1–V28
-(componentes PCA anônimos). O script valida o schema e registra o hash SHA-256
-da cópia utilizada. Não inferimos significados semânticos para as PCs.
+As variáveis são numéricas. O nome do notebook metricas_smotec foi mantido, mas a técnica utilizada é **SMOTE**. SMOTENC é apropriado quando existem features categóricas e numéricas em conjunto.
 
-Coloque o arquivo **original, sem reamostragem** em `data/raw/creditcard.csv`.
-A cópia entregue na raiz foi preservada e copiada para esse destino. Dados e
-modelo binário são ignorados pelo Git; figuras e métricas agregadas podem ser
-versionadas. Verifique a licença da fonte antes de redistribuir a base.
-Origem de referência: [Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud).
+## Comparações no TRAIN
 
-## Protocolo corrigido
+Foram avaliados Random Forest e XGBoost, incluindo ausência de reamostragem, SMOTE isolado, undersampling isolado, combinação de under + SMOTE, dados com/sem padronização, ablação de features e ajuste de threshold. F2 e F3 foram explorados para dar maior peso a Recall; **F1 permanece a métrica principal atual**.
 
-1. Validar dados, retirar apenas cópias exatas e ordenar por Time, preservando raw.
-2. Reservar o último quinto da **duração temporal**, sem separar empates de Time.
-   A proporção de linhas não precisa ser 20%. O objetivo é avaliar transações futuras.
-3. Usar só TRAIN para EDA e CV temporal expansiva em três janelas.
-4. Comparar **Random Forest e XGBoost**, cada um sem reamostragem e com
-   RandomUnderSampler + SMOTE. DummyClassifier é referência ingênua.
-5. Ajustar imputador, scaler (nas receitas SMOTE), samplers e estimador
-   **dentro de cada treino de fold** usando imblearn.Pipeline.
-6. Selecionar por **Average Precision média na CV**. Precision, Recall, F1,
-   ROC-AUC e Balanced Accuracy complementam; threshold=0,5 em todas as receitas.
-7. Congelar receita e configuração, reajustar no TRAIN completo e avaliar
-   **somente o vencedor no TEST**, que mantém a prevalência original.
+A tabela abaixo resume médias de CV temporal no TRAIN, sob **threshold comum de 0,50**. Ela não representa o threshold 0,70 do modelo escolhido nem resultados de TEST.
 
-RF sem amostragem usa pesos de classe; RF com SMOTE usa pesos uniformes.
-XGBoost usa pesos uniformes nas duas receitas. Não acumulamos SMOTE e pesos
-arbitrários. A comparação é de receitas completas, sem isolar causalmente o efeito
-do balanceamento. Parâmetros prefixados estão em `configs/experiment.yaml`.
-Não há busca de hiperparâmetros, calibração ou ajuste de threshold nesta rodada.
-AP usa probabilidades e difere da área trapezoidal da curva PR.
+| Modelo | Estratégia | F1 | Recall | Precision | AP |
+|---|---|---:|---:|---:|---:|
+| Random Forest | SMOTE | 79.55% | 76.31% | 83.74% | 0.7557 |
+| XGBoost | Sem reamostragem | 77.64% | 69.00% | 90.68% | 0.7684 |
+| Random Forest | Sem reamostragem | 76.53% | 72.14% | 82.86% | 0.7494 |
+| XGBoost | SMOTE | 64.42% | 76.00% | 62.23% | 0.7646 |
+| Random Forest | Undersampling | 60.08% | 79.65% | 49.45% | 0.7427 |
+| XGBoost | Undersampling | 55.54% | 77.90% | 46.64% | 0.7531 |
+| Dummy | dummy | 0.00% | 0.00% | 0.00% | 0.0014 |
+
+Os notebooks de métricas exibem a dispersão entre folds, barras agrupadas com rótulos e diagnósticos. Comparações devem considerar a mesma origem das métricas e política de threshold.
+
+### GridSearch de XGBoost e Random Forest
+
+As buscas adicionais pesquisaram hiperparâmetros por CV temporal no TRAIN e thresholds em outra janela de TRAIN. A validação posterior fica separada do ajuste. A busca é feita em duas etapas: hiperparâmetros e depois threshold, sem produto cartesiano conjunto entre ambas.
+
+- XGBoost: n_estimators, max_depth, learning_rate, reg_alpha (L1) e reg_lambda (L2). AP foi explorada como critério em uma rodada; a rodada atual utiliza F1 e reporta Recall, Precision e AP.
+- RF compacto: n_estimators 100/160, max_depth 10/14, min_samples_leaf 1/2.
+- RF ampliado: n_estimators **100/160/210/300**, max_depth **10/14/25/30**, min_samples_leaf **1/2/3/4**, total de **64 combinações**, com 31 thresholds na etapa seguinte.
+
+| Experimento | Threshold | F1 validação | Recall validação | Precision validação | AP validação |
+|---|---:|---:|---:|---:|---:|
+| XGBoost, busca por F1 | 0,60 | 68,00% | 77,27% | 60,71% | 0,6958 |
+| RF, grade compacta | 0,50 | 73,12% | 77,27% | 69,39% | 0,7136 |
+| RF, grade ampliada | 0,60 | 73,33% | 75,00% | 71,74% | 0,6973 |
+
+O RF ampliado selecionou 100 árvores, profundidade 30 e min_samples_leaf=4; melhor F1 médio de CV: 83,93%. Na validação posterior, o ganho de F1 frente à grade compacta foi de 0,21 ponto percentual, com maior Precision e menor Recall. Esses modelos continuam como experimentos; **o pacote best_model usa o RF de metricas_smotec, threshold 0,70**.
 
 ## Estrutura
 
-```text
-configs/experiment.yaml       # receitas, CV, seed, amostragem e threshold
-data/raw/                    # arquivo original local, ignorado no Git
-data/interim/                # reservado para derivados, se necessários
-data/processed/              # reservado para derivados, se necessários
-notebooks/01_eda.ipynb        # EDA somente TRAIN
-notebooks/02_model_training.ipynb  # protocolo, configuração e seleção
-notebooks/03_model_metrics.ipynb   # CV/OOF, diagnóstico e experimentos
-notebooks/04_final_test_metrics.ipynb  # todas as métricas do TEST histórico, referência F2
-notebooks/model_select.ipynb   # RF + SMOTE escolhido, threshold 0,70; validação TRAIN
-notebooks/metricas_smotec.ipynb # somente SMOTE numérico, com controles e diagnósticos
-notebooks/metricas_under.ipynb  # somente undersampling, com controles e diagnósticos
-src/fraud_detection/
-  data.py                    # schema e split temporal
-  preprocess.py              # imputação e sampling dentro do pipeline
-  model.py                   # RF, XGBoost e referência Dummy
-  validation.py              # folds temporais e cross_validate multiscorer
-  eda.py                     # tabelas e figuras exploratórias
-  evaluation.py              # métricas e gráficos
-  train.py                   # comparação, congelamento, refit e TEST
-  predict.py                 # inferência com o pipeline salvo
-tests/                       # regressões contra leakage, schema e inferência
-models/                      # pipeline persistido localmente
-reports/metrics/             # resultados agregados
-reports/figures/             # figuras do protocolo corrigido
-reports/experiments/         # manifesto, folds e seleção
-docs/methodology.md           # justificativas e limitações
-docs/legacy/                 # registro da versão anterior
-```
+    configs/                 Configurações dos experimentos
+    data/raw/                Base original, fora do Git
+    notebooks/               EDA, treino e apresentação das métricas
+    src/fraud_detection/     Dados, pipelines, validação, avaliação e inferência
+      deployment.py          Exportação do modelo escolhido e avaliação no TEST
+      api.py                 API FastAPI
+      tracking.py            Registro e modelo executável no MLflow
+    tests/                   Testes de dados, treino, avaliação e API
+    models/                  Artefatos dos experimentos, fora do Git
+    best_model/              Pacote escolhido e metadados
+    reports/metrics/         Métricas e tabelas
+    reports/figures/         Gráficos
+    reports/experiments/     Manifestos, parâmetros e hashes
+    mlflow/                  Banco SQLite e artefatos locais, fora do Git
+    docs/legacy/             Código do projeto original
 
-## Instalação e execução
+## Instalação
 
-Python 3.11 ou superior (ambiente desta execução: Python 3.12). No PowerShell,
-a partir da raiz:
+Python 3.11 ou superior. Execute os comandos pela raiz, em PowerShell:
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-.\.venv\Scripts\python.exe -m fraud_detection.eda
-.\.venv\Scripts\python.exe -m fraud_detection.train
-.\.venv\Scripts\python.exe scripts/summarize_results.py
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe -m ruff check src tests scripts
-```
+    python -m venv .venv
+    .\.venv\Scripts\python.exe -m pip install -e ".[dev,serving,tracking]"
 
-O ambiente efetivamente executado fica em `requirements-lock.txt`; para reproduzi-lo:
+Dependências principais ficam em pyproject.toml. requirements-lock.txt registra o ambiente utilizado. O arquivo binário do modelo e o banco MLflow são locais; não são incluídos no Git.
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
-.\.venv\Scripts\python.exe -m pip install -e . --no-deps
-```
+### Serializar e avaliar
 
-Arquivos de configuração alternativos: `--config configs/experiment.yaml`.
-A execução interrompe se um fold não tiver as duas classes ou se os ratios de
-SMOTE/under não forem válidos. Nenhum downsampling global ou fallback silencioso
-é aplicado.
+Com o artefato de origem models/standardized_selected_pipeline.joblib e os manifestos disponíveis:
 
-Para reproduzir numa pasta separada:
+    .\.venv\Scripts\python.exe -m fraud_detection.deployment
 
-```powershell
-.\.venv\Scripts\python.exe -m fraud_detection.train --output reports/reproductions/run_02
-```
+A serialização preserva pipeline e threshold. Para refazer a avaliação com os dados originais:
 
-A saída padrão bloqueia sobrescrita quando já existe avaliação TEST. Reproduzir
-o mesmo protocolo não cria uma nova avaliação independente. Se mudar decisões
-depois de ver TEST, reserve outro período externo.
+    .\.venv\Scripts\python.exe -m fraud_detection.deployment --evaluate
+
+O avaliador preserva relatórios já existentes: se o resultado best_model_metrics.json estiver presente, use uma saída separada:
+
+    .\.venv\Scripts\python.exe -m fraud_detection.deployment --evaluate --output .cache/reavaliacao
+
+O notebook utiliza os relatórios da raiz do projeto. Scripts de treino e os notebooks específicos documentam a geração dos artefatos de origem.
+
+### API
+
+    .\.venv\Scripts\python.exe -m uvicorn fraud_detection.api:app --host 127.0.0.1 --port 8000
+
+- Documentação interativa: http://127.0.0.1:8000/docs
+- GET /health: estado do serviço.
+- GET /model: configuração, schema e identificação do modelo.
+- POST /predict: lote de 1 a 1.000 transações.
+
+Exemplo sintético, sem dados reais:
+
+    $body = Get-Content best_model/request_example.json -Raw
+    Invoke-RestMethod -Uri http://127.0.0.1:8000/predict -Method Post -ContentType "application/json" -Body $body
+
+Cada transação deve conter as 30 features originais numéricas e finitas, com Time e Amount não negativos. Campos ausentes, extras, nulos ou textos são rejeitados com HTTP 422. A resposta contém fraud_probability, prediction (0/1), threshold e SHA256 do modelo. O campo fraud_probability é o score da classe 1; não possui calibração demonstrada.
+
+FRAUD_MODEL_PATH permite apontar para outro pacote local compatível, acompanhado de metadata.json. O serviço carrega o pipeline uma vez na inicialização e falha se o checksum divergir. O modelo não deve ser trocado durante uma execução do servidor.
+
+### MLflow
+
+Registrar o pacote e as métricas já calculadas:
+
+    .\.venv\Scripts\python.exe -m fraud_detection.tracking
+
+Abrir a interface local:
+
+    .\.venv\Scripts\python.exe -m mlflow ui --backend-store-uri sqlite:///mlflow/mlflow.db --host 127.0.0.1 --port 5000
+
+Experimento: fraud-detection-best-model. O registro inclui parâmetros, threshold, métricas de TEST com prefixo test_, referência de validação separada, hashes, versões, gráficos e modelo pyfunc executável que preserva o threshold 0,70. O script recarrega o modelo do MLflow e verifica a igualdade das previsões. A referência da execução fica em best_model/mlflow_run.json.
+
+O MLflow usa SQLite e artefatos locais. Registrar uma execução não repete treino ou teste. A API não depende de o servidor MLflow estar aberto.
 
 ## Notebooks
 
-Os notebooks leem relatórios já calculados; não treinam modelos de novo.
-Para abri-los:
+| Notebook | Finalidade |
+|---|---|
+| [01_eda.ipynb](notebooks/01_eda.ipynb) | Qualidade, distribuições, correlação e importância lado a lado |
+| [02_model_training.ipynb](notebooks/02_model_training.ipynb) | Protocolo e treinamento |
+| [03_model_metrics.ipynb](notebooks/03_model_metrics.ipynb) | Comparações gerais e diagnóstico |
+| [metricas_smotec.ipynb](notebooks/metricas_smotec.ipynb) | SMOTE isolado, controles e métricas |
+| [metricas_under.ipynb](notebooks/metricas_under.ipynb) | Undersampling isolado |
+| [model_select.ipynb](notebooks/model_select.ipynb) | Validação do modelo escolhido |
+| [best_model_metrics.ipynb](notebooks/best_model_metrics.ipynb) | Todas as métricas do modelo escolhido no TEST |
+| [xgboost_gridsearch.ipynb](notebooks/xgboost_gridsearch.ipynb) | Busca de hiperparâmetros e threshold do XGBoost |
+| [xgboost_model_metrics.ipynb](notebooks/xgboost_model_metrics.ipynb) | Estatísticas do XGBoost |
+| [random_forest_gridsearch.ipynb](notebooks/random_forest_gridsearch.ipynb) | Grade ampliada do RF |
+| [random_forest_model_metrics.ipynb](notebooks/random_forest_model_metrics.ipynb) | Estatísticas da grade ampliada do RF |
 
-```powershell
-.\.venv\Scripts\python.exe -m jupyterlab notebooks
-```
+Abrir no Jupyter:
 
-Escolha o kernel da .venv. Se precisar registrá-lo, use
-`python -m ipykernel install --user --name fraud-detection --display-name "Fraud Detection"`
-com o Python desse ambiente. Para executar todos e salvar as saídas:
+    .\.venv\Scripts\python.exe -m jupyterlab
 
-```powershell
-.\.venv\Scripts\python.exe scripts/execute_notebooks.py
-```
+Atualizar as saídas do notebook escolhido usando os relatórios salvos:
 
-Se faltarem artefatos, os notebooks informam quais scripts executar.
-A EDA inclui qualidade, distribuições, outliers, correlações, taxas por quantis,
-tempo e interação exploratória. O notebook de métricas mostra barras agrupadas
-de F1/Recall/Precision, média e dispersão por fold, AP, OOF, erros complementares,
-curvas por número de árvores, associação versus importância e TEST em seção própria.
+    .\.venv\Scripts\python.exe scripts/execute_notebooks.py --notebook best_model_metrics.ipynb
 
-## Nova rodada: threshold com ênfase em Recall
+A execução dos notebooks de métricas lê artefatos e não dispara novos treinos. Os notebooks de GridSearch deixam a execução pesada desativada por padrão.
 
-Após a primeira avaliação, foi adicionada uma busca específica de threshold
-para a receita XGBoost sem reamostragem. **GridSearchCV** percorre os limiares
-em `configs/threshold.yaml`, otimizando **F2 (beta=2)**, conforme escolhido:
-Recall tem mais peso, mas falsos positivos ainda são penalizados.
-O threshold 0 é incluído para demonstrar o limite de maximizar Recall puro.
+## Métricas e interpretação
 
-O modelo é ajustado no prefixo da janela de treino. Um
-`FixedThresholdClassifier(FrozenEstimator(pipeline))` permite ao GridSearch
-variar apenas o threshold, pontuando numa janela interna posterior que o modelo
-não viu. Três folds temporais externos comparam a política ajustada com 0,5.
-Depois, o threshold final é escolhido numa janela interna do TRAIN completo
-e o pipeline é reajustado em todo o TRAIN.
+Precision = TP/(TP+FP); Recall = TP/(TP+FN); F1 = média harmônica dos dois. AP/AUPRC avalia a ordenação das fraudes ao longo dos níveis de Recall. A matriz de confusão explicita o volume de erros. Accuracy deve ser interpretada junto de Recall e Precision devido ao desbalanceamento.
 
-```powershell
-.\.venv\Scripts\python.exe -m fraud_detection.threshold
-.\.venv\Scripts\python.exe scripts/execute_notebooks.py
-```
+**Reduzir** o threshold tende a elevar Recall e alertas; **aumentá-lo** tende a reduzir ambos e pode elevar Precision. Correlação e importância não indicam causalidade. As importâncias por permutação e os componentes PCA exigem interpretação cuidadosa.
 
-Resultados desta rodada: [reports/threshold_results.md](reports/threshold_results.md).
-Tabelas: `threshold_grid.csv` (seleção interna),
-`threshold_outer_folds.csv` e `threshold_comparison.csv` (validação externa).
-O notebook de métricas inclui essa análise antes da seção de TEST histórico.
-O artefato novo é `models/recall_pipeline.joblib`; use esse caminho na função
-`predict` para aplicar a nova política. O artefato `final_pipeline.joblib`
-continua representando a primeira rodada com threshold 0,5.
+## Verificação
 
-**O TEST já havia sido avaliado e não foi reutilizado nesta busca.**
-A CV externa avalia o ajuste de threshold condicionado à receita escolhida antes;
-não é avaliação independente de toda a seleção de modelos. O score da janela
-interna final é de seleção, não teste. A nova política precisa de outro período
-externo para avaliação independente. Melhor limiar na grade não é ótimo universal
-nem threshold de custo financeiro conhecido.
-
-## Resultados
-
-Os resultados reais desta execução e a interpretação resumida estão em
-[reports/results.md](reports/results.md). Tabelas completas:
-`reports/metrics/model_comparison.csv` (CV),
-`cv_folds.csv`, `oof_metrics.csv` e `test_metrics.json` (só vencedor).
-O gráfico de seleção é `reports/figures/model_comparison_f1_recall_precision.png`.
-
-OOF cobre apenas as janelas de validação, sem o prefixo inicial; métricas OOF
-agregadas diferem da média dos folds. Desvio entre folds não é intervalo de
-confiança. Não foram calculados intervalos formais do TEST nesta rodada.
-
-## Inferência
-
-```python
-from pathlib import Path
-import pandas as pd
-from fraud_detection.predict import predict
-
-# Execute pela raiz; transacoes deve conter Time, V1–V28 e Amount numéricos.
-transacoes = pd.read_csv("novas_transacoes.csv")
-# Artefato histórico: threshold 0,70, 14 features; anterior ao retorno a F1.
-resultado = predict(transacoes, Path("models/standardized_selected_pipeline.joblib"))
-```
-
-O artefato contém o pipeline inteiro, a ordem das features e o threshold.
-Reamostragem ocorre no fit, nunca durante predict. Carregue apenas artefatos
-joblib de origem confiável.
-
-## Limitações e próximos passos
-
-A base tem só dois dias; não há IDs de cartão para separar clientes, nem dados
-originais para auditar o PCA fornecido. É assumido que as features existem na
-autorização. Como o projeto anterior já explorou a base, esta é uma reavaliação
-retrospectiva e não evidência prospectiva.
-
-Sem custos de FP/FN não há threshold operacional ótimo demonstrado; as
-probabilidades não foram calibradas. Permutação usa validação dentro do TRAIN e
-é descritiva após seleção. Correlação/importance não implicam causalidade.
-Mais períodos são necessários para estabilidade e incerteza temporal.
-
-Antes de introduzir complexidade, priorize validação prospectiva e definição dos
-custos. Threshold tuning/calibração podem então ajudar, mas precisam de CV interna
-ou janela adicional no TRAIN. Early stopping requer validação interna por fold;
-Voting/Stacking só se justificam com ganho validado. Não há ganho presumido de
-novas técnicas nem alegação de prontidão de produção. Detalhes em
-[docs/methodology.md](docs/methodology.md).
-
-Referências técnicas:
-[imbalanced-learn: leakage](https://imbalanced-learn.org/stable/common_pitfalls.html)
-e [scikit-learn: Average Precision](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.average_precision_score.html).
-
-### Correlação com a target e importância na EDA
-
-O notebook 01 inclui dois painéis com as mesmas 30 features: Pearson com Class no
-TRAIN e importância por permutação (queda de AP) na última validação do TRAIN.
-Os valores e a dispersão ficam indicados no gráfico e na tabela. É um diagnóstico
-pós-modelagem, sem TEST, com escalas distintas e sem interpretação causal.
-
-Para gerar esse painel após o treinamento, execute novamente
-`python -m fraud_detection.eda`, que apenas lê as importâncias já calculadas.
-Figura: `reports/figures/eda_target_correlation_importance.png`.
-
-As curvas Precision–Recall já estão no notebook 03, nos diagnósticos OOF do TRAIN
-e na seção própria de TEST histórico. A legenda informa **AP (Average Precision)**,
-que difere da área trapezoidal da curva PR. Alterar o threshold muda o ponto de
-decisão, não a curva nem AP quando as probabilidades permanecem iguais.
-
-## StandardScaler, SMOTE e regra conjunta de seleção
-
-A rodada em configs/ablation.yaml compara dez receitas (cinco por família):
-todas as features sem scaling; todas padronizadas; todas com scaling+SMOTE;
-filtradas+scaling; filtradas+scaling+SMOTE. As métricas principais usam threshold
-comum 0,5 nos mesmos folds temporais. Em seguida há GridSearch/F2 de threshold
-da melhor receita filtrada, com ajuste interno e avaliação externa no TRAIN.
-
-Regra de retirada: **abs(Pearson com Class) < 0,090 E importância por permutação
-< 0,100**. Se só uma condição for atendida, a feature permanece. O sinal negativo
-não torna uma correlação forte descartável. A importância é queda de AP em
-validação interna de uma referência XGBoost, não porcentagem. A regra é reaprendida
-em cada treino para evitar vazamento. Controles completos medem a ablação.
-
-StandardScaler aprende média/desvio no treino do fold; árvores normalmente mudam
-pouco, mas SMOTE usa distâncias. SMOTE é aplicado só no treino, mantendo todas
-as legítimas e definindo minoria/maioria=0,1. SMOTENC é para entradas mistas
-numéricas e categóricas; esta base só tem entradas numéricas. Nenhum método
-de balanceamento é garantidamente melhor: veja a comparação executada.
-
-```powershell
-.\.venv\Scripts\python.exe -m fraud_detection.eda
-.\.venv\Scripts\python.exe -m fraud_detection.ablation
-.\.venv\Scripts\python.exe scripts/execute_notebooks.py
-```
-
-Resultados: [reports/ablation_results.md](reports/ablation_results.md).
-Artefato novo: models/standardized_selected_pipeline.joblib, compatível com predict.
-O schema de entrada segue Time, V1–V28 e Amount; o ColumnTransformer usa só as
-features mantidas. Os modelos/TEST históricos permanecem separados; esta rodada
-não volta a pontuar TEST já visto.
-
-[Guia das métricas e denominadores](docs/metrics_guide.md): definições de Precision,
-Recall, F1/F2, AP/PR, ROC-AUC, Log Loss, Brier, FP/FN, dispersão de CV, importância,
-qualidade dos dados e taxas por faixa. Os notebooks exibem proporções como
-percentuais quando apropriado, sem modificar os valores numéricos dos CSVs.
-
-Fraude observada por faixa: reports/metrics/eda_feature_bins.csv. Cada linha
-inclui transações, fraudes, legítimas, taxa de fraude (%) e parcela das fraudes
-do TRAIN (%). 0,000190 em proporção equivale a 0,0190%.
-Erros por faixa na validação: reports/metrics/category_error_metrics.csv, com
-TP/FP/FN/TN, Recall, Precision, FPR e parcela de alertas falsos, cada qual com
-seu denominador. Essas faixas numéricas não representam tipos reais de fraude.
-
-O código de src/fraud_detection está comentado em português por blocos de
-responsabilidade: contratos de dados, split, prevenção de leakage, fit de scaler,
-sampling, regra conjunta, seleção de threshold, inferência e relatórios.
-
-## Avaliação solicitada do pipeline final no TEST histórico
-
-O notebook [04_final_test_metrics.ipynb](notebooks/04_final_test_metrics.ipynb)
-reúne todas as métricas da avaliação do Random Forest com StandardScaler, SMOTE,
-14 features e threshold 0,70. Esse pipeline já estava congelado antes da execução.
-Não houve novo fit, reamostragem do TEST, seleção de features ou threshold tuning.
-
-Como esse período já havia sido avaliado na primeira rodada, o resultado é uma
-**reavaliação retrospectiva do TEST histórico**, não um novo teste independente.
-Resultados antigos e novos ficam separados; não há seleção de candidatos no TEST.
-
-```powershell
-.\.venv\Scripts\python.exe -m fraud_detection.final_test
-.\.venv\Scripts\python.exe scripts/execute_notebooks.py --notebook 04_final_test_metrics.ipynb
-```
-
-A primeira linha é necessária só para gerar os artefatos uma vez. O notebook
-apenas lê os resultados. A avaliação existente é protegida contra sobrescrita;
-para reproduzir separadamente use --output, lembrando que isso não cria dados novos.
-
-Relatório: [reports/final_test_results.md](reports/final_test_results.md).
-Artefatos: reports/metrics/final_test_metrics.json, final_test_metric_definitions.csv,
-final_test_classification_report.json, final_test_calibration.csv,
-final_test_time_segments.csv e final_test_feature_segments.csv.
-O manifesto em reports/experiments/final_test_manifest.json registra hashes,
-horário, split e a ausência de treino/tuning nesta avaliação.
-
-O notebook explica Precision/Recall/F1/F2, AP e AUPRC trapezoidal, ROC-AUC,
-especificidade, acurácia e balanced accuracy, FPR/FNR, parcela de alertas falsos,
-valor preditivo negativo, Log Loss, Brier, MCC/Kappa, matriz de confusão, métricas
-por classe e erros por período/faixa. As unidades e denominadores estão explícitos.
-
-## Rodada F3: maior ênfase em Recall
-
-A receita Random Forest com StandardScaler, SMOTE e regra conjunta de features
-permanece fixa. O módulo threshold_f3 repondera as contagens da grade interna
-anterior com **F3 = 10TP/(10TP+9FN+FP)**, equivalente ao scorer F-beta com beta=3.
-A mesma grade de thresholds e as mesmas janelas de TRAIN são preservadas.
-
-Os folds externos com thresholds diferentes são reconstruídos com a receita
-original. Antes de pontuar F3, suas contagens com threshold F2 precisam reproduzir
-as contagens anteriores. Folds sem mudança de threshold reutilizam suas métricas.
-Assim, não há fits internos redundantes nem uso de TEST para escolher limiares.
-
-```powershell
-.\.venv\Scripts\python.exe -m fraud_detection.threshold_f3
-.\.venv\Scripts\python.exe scripts/execute_notebooks.py --notebook 03_model_metrics.ipynb
-```
-
-### Resultado do experimento F3 e decisão
-
-F3 dá mais ênfase ao Recall que F2, mas ainda penaliza falsos alertas.
-Na validação temporal externa dentro do TRAIN:
-
-| Política de ajuste | Recall médio | Precision média | F3 médio |
-|---|---:|---:|---:|
-| F2 — referência principal | 79.41% | 72.24% | 0.7836 |
-| F3 — experimento | 80.20% | 51.61% | 0.7499 |
-
-O ganho de Recall foi de apenas 0.79 ponto percentual,
-com queda de 20.63 pontos de Precision e piora do
-próprio F3 externo. **F3 não apresentou vantagem validada nesta rodada;
-F2 continua principal.** Os números são médias da política de ajuste:
-cada fold escolhe seu limiar internamente. Não são resultados do TEST.
-
-O threshold final F3 foi 0,50, salvo em artefato experimental separado.
-O threshold principal F2 permanece 0,70. Nenhum modelo foi treinado ou
-reavaliado para registrar esta decisão; os resultados de TEST foram preservados.
-
-Resultados: [reports/f3_results.md](reports/f3_results.md).
-Novo artefato: models/recall_f3_pipeline.joblib. O pipeline treinado é o mesmo;
-o threshold e a indicação de objetivo passam a F3. O artefato F2 fica preservado.
-
-O notebook 03 inclui a comparação F2/F3 em CV e a grade interna final.
-O notebook 04 continua mostrando exclusivamente o TEST histórico com threshold
-F2=0,70. **Não houve nova avaliação de TEST para F3.** O experimento com F3 foi
-realizado após observar esse teste; uma confirmação independente requer outro período.
-
-## SMOTE isolado e undersampling isolado — F1 principal
-
-Somente SMOTE e somente RandomUnderSampler foram testados em Random Forest
-e XGBoost, além do controle sem reamostragem. Nenhuma receita combina samplers.
-Mesmos folds, StandardScaler, features por fold, hiperparâmetros e pesos uniformes.
-**F1 é principal**, com threshold comum **0,50**.
-
-As métricas foram recalculadas das contagens de CV já persistidas:
-trocar a métrica principal não altera previsões, Precision ou Recall quando
-o threshold é mantido. Não foi necessário repetir o treino.
-
-| Família | Receita | F1 médio | Recall médio | Precision média | AP média |
-|---|---|---:|---:|---:|---:|
-| Random Forest | Sem reamostragem | 76.53% | 72.14% | 82.86% | 0.7494 |
-| Random Forest | Somente SMOTE | 79.55% | 76.31% | 83.74% | 0.7557 |
-| Random Forest | Somente under | 60.08% | 79.65% | 49.45% | 0.7427 |
-| XGBoost | Sem reamostragem | 77.64% | 69.00% | 90.68% | 0.7684 |
-| XGBoost | Somente SMOTE | 64.42% | 76.00% | 62.23% | 0.7646 |
-| XGBoost | Somente under | 55.54% | 77.90% | 46.64% | 0.7531 |
-
-SMOTE aumentou o F1 do Random Forest frente ao controle uniforme.
-Undersampling aumentou Recall com queda de Precision e F1 nas duas famílias.
-No XGBoost, SMOTE também aumentou Recall com queda de Precision e F1.
-Os resultados descrevem esta configuração, sem demonstrar superioridade universal.
-
-### Notebooks e gráficos
-
-- [metricas_smotec.ipynb](notebooks/metricas_smotec.ipynb): SMOTE numérico isolado.
-- [metricas_under.ipynb](notebooks/metricas_under.ipynb): somente undersampling.
-
-Cada gráfico principal tem **dois grupos — Random Forest e XGBoost — e três
-barras por grupo: F1-score, Recall e Precision**, em porcentagem.
-Os controles ficam nas tabelas. A sensibilidade por threshold também usa
-barras agrupadas dessas três métricas. F2 foi retirado das saídas atuais.
-
-Treino versus validação acompanha F1. Curvas AP/Log Loss do XGBoost, matriz OOF,
-PR/AP, ROC, correlação versus importância e diversidade de erros são complementares.
-
-### Amostragem e reprodução
-
-Razão final: uma fraude para dez legítimas. SMOTE preserva legítimas e cria
-exemplos sintéticos; under preserva fraudes e remove legítimas. A validação
-mantém a distribuição original. O nome metricas_smotec foi preservado;
-o algoritmo usado é SMOTE numérico.
-
-```powershell
-.\.venv\Scripts\python.exe -m fraud_detection.sampling_comparison --refresh-reports
-.\.venv\Scripts\python.exe scripts/execute_notebooks.py --notebook metricas_smotec.ipynb
-.\.venv\Scripts\python.exe scripts/execute_notebooks.py --notebook metricas_under.ipynb
-```
-
---refresh-reports usa contagens calculadas, sem retreinar. Para um experimento
-novo, execute o módulo sem a opção, com --output numa pasta separada.
-Configuração: configs/sampling_comparison.yaml.
-
-[Relatório completo](reports/sampling_comparison_results.md).
-Tabelas: reports/metrics/sampling_comparison.csv, sampling_folds.csv,
-sampling_counts.csv e sampling_oof_metrics.csv; prefixos smote_ e under_
-identificam os demais arquivos. O manifesto registra a atualização sem fit.
-
-**Limites:** TRAIN/folds reutilizados; desvio não é intervalo de confiança.
-Threshold 0,50 é comum, sem nova otimização. OOF agregado difere da média dos folds.
-Nenhum novo TEST foi avaliado; o artefato histórico com limiar 0,70 foi preservado.
-
-## Métricas registradas no TEST — Random Forest com SMOTE, threshold 0,70
-
-Resultados já persistidos do **Random Forest com StandardScaler, somente SMOTE
-e seleção de 14 features**, com threshold **0,70**. SMOTE foi aplicado somente
-no treino; o TEST preserva a distribuição original. O nome `smotec` usado no
-notebook se refere a SMOTE numérico.
-
-O TEST contém **73.434 transações**, sendo **97 fraudes**
-e **73.337 legítimas**. A classe positiva é **fraude (Class=1)**.
-
-| Métrica | Resultado no TEST |
-|---|---:|
-| F1-score | 81,71% |
-| Recall (fraudes detectadas) | 69,07% |
-| Precision (fraudes entre os alertas) | 100,00% |
-| Especificidade | 100,00% |
-| Balanced Accuracy | 84,54% |
-| Acurácia | 99,9591% |
-| Valor preditivo negativo | 99,9591% |
-| Taxa de falsos positivos (FP / legítimas) | 0,0000% |
-| Taxa de falsos negativos (FN / fraudes) | 30,93% |
-| Parcela de alertas falsos (FP / alertas) | 0,00% |
-| Parcela de liberadas que era fraude (FN / liberadas) | 0,0409% |
-| Taxa de alertas | 0,0912% |
-| Prevalência de fraude | 0,1321% |
-| Average Precision (AP, resumo da curva PR) | 0,784309 |
-| Área trapezoidal da curva PR | 0,784139 |
-| ROC-AUC | 0,973428 |
-| Log Loss | 0,007464 |
-| Brier score | 0,000662 |
-| Matthews (MCC) | 0,830927 |
-| Kappa de Cohen | 0,816876 |
-
-| Resultado da decisão | Transações |
-|---|---:|
-| Fraudes detectadas (TP) | 67 |
-| Fraudes não detectadas (FN) | 30 |
-| Legítimas alertadas (FP) | 0 |
-| Legítimas liberadas (TN) | 73.337 |
-
-**Interpretação do threshold:** o modelo obteve **Precision de 100%** nesta
-amostra, com threshold **0,70**, mas deixou de detectar **30 das 97 fraudes**.
-Uma possibilidade para buscar maior Recall é **diminuir o threshold**, passando
-a alertar também transações com scores menores. Isso pode recuperar fraudes,
-mas também gerar falsos positivos e reduzir Precision; o ganho não é garantido.
-**Aumentar o threshold mantém ou reduz o Recall** para o mesmo modelo e dados.
-Qualquer novo limiar deve ser validado somente no TRAIN, por validação interna
-ou CV, e confirmado em dados novos, pois este TEST já foi consultado.
-
-**Limitação:** este TEST histórico já foi consultado durante a evolução do projeto.
-Os resultados são retrospectivos e não constituem confirmação independente após
-as iterações. Precision de 100% descreve esta amostra e não garante ausência de
-falsos alertas futuros. Nenhum novo treino, ajuste de threshold ou teste foi
-executado para registrar esta seção.
-
-Matrizes de confusão, curvas PR/ROC, calibração, métricas por classe e erros por
-faixas estão no [notebook de TEST](notebooks/04_final_test_metrics.ipynb).
-Fontes: [métricas persistidas](reports/metrics/final_test_metrics.json) e
-[definições e fórmulas](reports/metrics/final_test_metric_definitions.csv).
-
-### Limitações metodológicas e avaliação
-
-O projeto passou por diferentes etapas de experimentação e aperfeiçoamento metodológico.
-
-Durante seu desenvolvimento, o conjunto de TEST foi avaliado e seus resultados ficaram conhecidos antes da conclusão de todas as análises e decisões posteriores.
-
-Embora os experimentos posteriores de treinamento, seleção de features e ajuste de threshold tenham utilizado apenas o conjunto de TRAIN e suas validações internas, o TEST histórico não pode mais ser considerado completamente independente dessas iterações.
-
-Portanto, as métricas apresentadas no TEST devem ser interpretadas como resultados retrospectivos, e não como uma estimativa definitiva da capacidade de generalização do modelo atualmente selecionado.
-
-**Próximos passos:** validar o procedimento final de seleção utilizando dados temporais ainda não observados, avaliar sua estabilidade em diferentes períodos e investigar a calibração das probabilidades e o impacto operacional dos falsos positivos e negativos.
+    .\.venv\Scripts\python.exe -m pytest --basetemp=.cache/pytest-local
+    .\.venv\Scripts\python.exe -m ruff check --no-cache src tests
+    .\.venv\Scripts\python.exe -m ruff format --check --no-cache src tests

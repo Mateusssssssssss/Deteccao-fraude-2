@@ -167,3 +167,9 @@ models/*.joblib
 reports/experiments/*predictions*
 reports/experiments/*indices*
 reports/experiments/eda_train_summary.csv
+
+# Pacote de inferência e tracking locais (metadados ficam versionáveis)
+best_model/*.joblib
+mlflow/
+mlruns/
+mlartifacts/

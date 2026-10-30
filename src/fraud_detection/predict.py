@@ -8,6 +8,11 @@ import pandas as pd
 def predict(frame: pd.DataFrame, artifact_path) -> pd.DataFrame:
     # O artefato reúne o pré-processamento ajustado, o estimador e o threshold.
     artifact = joblib.load(artifact_path)
+    return predict_with_artifact(frame, artifact)
+
+
+def predict_with_artifact(frame: pd.DataFrame, artifact: dict) -> pd.DataFrame:
+    """Prediz sem recarregar o pipeline já ajustado ou executar fit/resampling."""
     features = artifact["features"]
     # Rejeita schema incompatível em vez de prever com colunas trocadas ou ausentes.
     missing = set(features) - set(frame.columns)

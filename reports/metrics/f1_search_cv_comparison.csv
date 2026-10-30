@@ -1,0 +1,3 @@
+model,source,threshold,f1,recall,precision,average_precision,f1_std,recall_std,precision_std
+XGBoost f1 + SMOTE,"CV de parâmetros TRAIN, referência 0,50; threshold final escolhido depois",0.5,0.8245342575973262,0.7533071517155849,0.9107789855072463,0.7602355102059624,0.01658723772977655,0.009404712691194694,0.026721014492753603
+Random Forest f1 + SMOTE,"CV de parâmetros TRAIN, referência 0,50; threshold final escolhido depois",0.5,0.8185240034555104,0.7495866060355518,0.9032451923076923,0.7658185533748889,0.010304825373318505,0.03007441091360069,0.01862980769230771

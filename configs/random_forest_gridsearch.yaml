@@ -1,0 +1,71 @@
+# Grade solicitada: 4 x 4 x 4 = 64 combinações; 31 thresholds mantidos.
+experiment_name: random_forest_expanded_f1_threshold
+primary_metric: f1
+cv_splits: 3
+sampling_ratio: 0.1
+model_n_jobs: 2
+search_n_jobs: 3
+permutation_repeats: 3
+iteration_points:
+- 25
+- 50
+- 100
+- 200
+- 400
+param_grid:
+  n_estimators:
+  - 100
+  - 160
+  - 210
+  - 300
+  max_depth:
+  - 10
+  - 14
+  - 25
+  - 30
+  min_samples_leaf:
+  - 1
+  - 2
+  - 3
+  - 4
+  max_features:
+  - sqrt
+  criterion:
+  - gini
+threshold_objective: f1
+thresholds:
+- 0.0
+- 0.001
+- 0.005
+- 0.01
+- 0.02
+- 0.03
+- 0.05
+- 0.075
+- 0.1
+- 0.125
+- 0.15
+- 0.175
+- 0.2
+- 0.225
+- 0.25
+- 0.275
+- 0.3
+- 0.35
+- 0.4
+- 0.45
+- 0.5
+- 0.55
+- 0.6
+- 0.65
+- 0.7
+- 0.75
+- 0.8
+- 0.85
+- 0.9
+- 0.95
+- 1.0
+family: random_forest
+cv_reference_threshold: 0.5
+reuse_from: .
+reuse_prefix: random_forest_f1_threshold

@@ -1,0 +1,16 @@
+{
+  "best_params": {
+    "criterion": "gini",
+    "max_depth": 30,
+    "max_features": "sqrt",
+    "min_samples_leaf": 4,
+    "n_estimators": 100
+  },
+  "threshold": 0.6,
+  "primary_metric": "f1",
+  "family": "random_forest",
+  "best_cv_score": 0.839251015721604,
+  "threshold_objective": "f1",
+  "best_cv_ap": 0.7914826573455817,
+  "validation_used_for_selection": false
+}

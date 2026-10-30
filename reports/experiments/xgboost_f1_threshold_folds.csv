@@ -1,0 +1,3 @@
+fold,fit_rows,validation_rows,fit_frauds,validation_frauds,fit_time_max,validation_time_min,validation_time_max
+1,30598,44312,101,82,36054.0,36055.0,55952.0
+2,74910,45010,183,59,55952.0,55953.0,75810.0

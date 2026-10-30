@@ -1,0 +1,16 @@
+{
+  "best_params": {
+    "learning_rate": 0.01,
+    "max_depth": 4,
+    "n_estimators": 200,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0
+  },
+  "threshold": 0.6,
+  "primary_metric": "f1",
+  "family": "xgboost",
+  "best_cv_score": 0.8245342575973262,
+  "threshold_objective": "f1",
+  "best_cv_ap": 0.7602355102059624,
+  "validation_used_for_selection": false
+}

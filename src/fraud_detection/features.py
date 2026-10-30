@@ -2,7 +2,9 @@
 
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.inspection import permutation_importance
+from sklearn.utils.validation import check_is_fitted
 
 from fraud_detection.data import FEATURES, TARGET, temporal_split
 from fraud_detection.model import candidates
@@ -57,3 +59,30 @@ def audit_features(train: pd.DataFrame, config: dict, settings: dict) -> pd.Data
     if not table.keep.any():
         raise ValueError("A regra removeu todas as features; reveja os limites.")
     return table
+
+
+class TrainFeatureSelector(TransformerMixin, BaseEstimator):
+    """Reaprende a regra conjunta no fit de cada fold, nunca na validação da busca."""
+
+    def __init__(self, config: dict, settings: dict):
+        self.config = config
+        self.settings = settings
+
+    def fit(self, X: pd.DataFrame, y):
+        # Preserva alinhamento por posição, inclusive em subconjuntos com índice não contíguo.
+        frame = X[FEATURES].copy()
+        frame[TARGET] = np.asarray(y)
+        self.audit_ = audit_features(frame, self.config, self.settings)
+        self.selected_features_ = self.audit_.loc[self.audit_.keep, "feature"].tolist()
+        self.n_features_in_ = X.shape[1]
+        self.feature_names_in_ = np.asarray(X.columns, dtype=object)
+        self.fit_time_max_ = float(frame.Time.max())
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        check_is_fitted(self, "selected_features_")
+        return X.loc[:, self.selected_features_].copy()
+
+    def get_feature_names_out(self, input_features=None):
+        check_is_fitted(self, "selected_features_")
+        return np.asarray(self.selected_features_, dtype=object)

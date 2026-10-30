@@ -1,0 +1,21 @@
+metric,name,value,unit,definition,preferred
+precision,Precision,60.71428571428571,%,TP/(TP+FP): fração dos alertas que era fraude,Maior
+recall,Recall / sensibilidade,77.27272727272727,%,TP/(TP+FN): fração das fraudes detectada,Maior
+f1,F1,68.0,%,2PR/(P+R): média harmônica simétrica de Precision e Recall,Maior
+specificity,Especificidade,99.95934583756814,%,TN/(TN+FP): legítimas corretamente liberadas,Maior
+accuracy,Acurácia,99.94091471408261,%,(TP+TN)/n: acertos totais; pode enganar em classe rara,Maior
+balanced_accuracy,Balanced Accuracy,88.6160365551477,%,(Recall+Especificidade)/2,Maior
+negative_predictive_value,Valor preditivo negativo,99.98151673659501,%,TN/(TN+FN): legítimas entre não alertadas,Maior
+false_positive_rate,Taxa de falsos positivos (FPR),0.04065416243185808,%,FP/(FP+TN): legítimas alertadas,Menor
+false_negative_rate,Taxa de falsos negativos (FNR),22.727272727272727,%,FN/(FN+TP): fraudes não detectadas,Menor
+false_discovery_rate,Parcela de alertas falsos (FDR),39.285714285714285,%,FP/(FP+TP): alertas que eram legítimos,Menor
+false_omission_rate,Parcela de não alertadas que era fraude,0.018483263404986783,%,FN/(FN+TN): fraudes entre liberadas,Menor
+alert_rate,Taxa de alertas,0.10339925035543493,%,(TP+FP)/n: volume relativo de revisão/bloqueio,Depende do custo/capacidade
+prevalence,Prevalência de fraude,0.08124226813641315,%,(TP+FN)/n: frequência real de fraude na amostra avaliada,Descritiva
+average_precision,Average Precision (AP),0.6957732213159877,score 0–1,Resumo de Precision ponderado pelos ganhos de Recall; usa scores,Maior
+pr_auc_trapezoid,Área trapezoidal PR,0.6903448545085153,score 0–1,Integral trapezoidal da curva Precision–Recall; difere de AP,Maior
+roc_auc,ROC-AUC,0.9682817736638303,score 0–1,Ordenação fraude vs. legítima; complemento à AP,Maior
+log_loss,Log Loss,0.030286458472724893,perda,Perda probabilística; penaliza erros confiantes,Menor
+brier,Brier score,0.0021303489398264053,erro quadrático,Média de (probabilidade−rótulo)²,Menor
+mcc,Coeficiente de Matthews (MCC),0.6846650752283534,score −1–1,Associação entre decisões e rótulos usando TN/FP/FN/TP,Maior
+cohen_kappa,Kappa de Cohen,0.6797085625281373,score −1–1,Concordância corrigida pela concordância esperada ao acaso,Maior

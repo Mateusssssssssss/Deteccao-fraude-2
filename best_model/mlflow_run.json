@@ -1,0 +1,8 @@
+{
+  "run_id": "ea8296640f3d46de99a066906746d50b",
+  "experiment_id": "1",
+  "tracking_uri": "sqlite:///mlflow/mlflow.db",
+  "model_uri": "models:/m-bf1d2e3db2e6405da5096c2f29d98b79",
+  "artifact_sha256": "b8538cee7a45d9cb95051b6b4acc9d027477cc3d07a3ff90074ae555f6dc0c77",
+  "prediction_round_trip_passed": true
+}

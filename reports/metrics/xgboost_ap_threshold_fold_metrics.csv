@@ -1,0 +1,3 @@
+fold,source,average_precision,train_average_precision,roc_auc
+1,CV TRAIN anterior à janela de threshold,0.791294803171537,0.9934118187422791,0.9701591734999421
+2,CV TRAIN anterior à janela de threshold,0.7936840521177608,0.9575280469928513,0.9597369489715544
